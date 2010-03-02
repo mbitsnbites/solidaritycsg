@@ -171,9 +171,9 @@ void Voxelize::SetTriangles(int aTriangleCount, int * aIndices,
   int * iPtr = aIndices;
   for(int i = 0; i < aVertexCount; ++ i)
   {
-    mTriangles[i].SetCoordinates(&mVertices[aIndices[iPtr[0]]],
-                                 &mVertices[aIndices[iPtr[1]]],
-                                 &mVertices[aIndices[iPtr[2]]]);
+    mTriangles[i].SetCoordinates(&mVertices[iPtr[0]],
+                                 &mVertices[iPtr[1]],
+                                 &mVertices[iPtr[2]]);
     iPtr += 3;
   }
 }
