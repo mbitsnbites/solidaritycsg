@@ -19,6 +19,7 @@
 // This is the master include file, so include everything...
 #include "Voxelize/SphereVoxelize.h"
 #include "Voxelize/MeshVoxelize.h"
+#include "FileIO/TGAImageWriter.h"
 
 
 //-----------------------------------------------------------------------------
