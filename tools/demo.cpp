@@ -15,6 +15,7 @@
 
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include "../source/SolidarityCSG.h"
 
 using namespace csg;
@@ -47,7 +48,12 @@ int main(int argc, char ** argv)
 
     // Write this file to disk
     stringstream name;
-    name << "output_" << i << ".tga";
+    name << "output_";
+    name.fill('0');
+    name.width(5);
+    name << i;
+    name.width(0);
+    name << ".tga";
     output.SetData(voxelSlice);
     output.SaveToFile(name.str().c_str());
   }
