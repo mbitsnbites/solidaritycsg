@@ -36,7 +36,7 @@ int main(int argc, char ** argv)
 
   // Prepare image writer
   TGAImageWriter output;
-  output.SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfGray8);
+  output.SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
 
   // Begin voxelization
   sv.SetSampleSpace(&space);
@@ -57,6 +57,7 @@ int main(int argc, char ** argv)
     output.SetData(voxelSlice);
     output.SaveToFile(name.str().c_str());
   }
+  delete[] voxelSlice;
 
   return 0;
 }

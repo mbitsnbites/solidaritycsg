@@ -31,8 +31,8 @@ void TGAImageWriter::SaveToFile(const char * aFileName)
   if(!mData || (mWidth < 1) || (mHeight < 1))
     throw runtime_error("Badly defined image.");
 
-  // We only support gray scale images
-  if(mPixelFormat != pfGray8)
+  // We only support 8-bit signed images
+  if(mPixelFormat != pfSigned8)
     throw runtime_error("Unsupported pixel format.");
 
   // Open output file
@@ -62,8 +62,17 @@ void TGAImageWriter::SaveToFile(const char * aFileName)
   header[17] = 32; // Flip flag (bit 5: use top-to-bottom ordering)
   f.write((const char *) header, 18);
 
+  // Convert the image to the output format
+  int imgSize = mWidth * mHeight;
+  unsigned char * data = new unsigned char[imgSize];
+  for(int i = 0; i < imgSize; ++ i)
+    data[i] = (unsigned char)(128 + (int)((char *)mData)[i]);
+
   // Write data
-  f.write((const char *) mData, mWidth * mHeight);
+  f.write((const char *) data, imgSize);
+
+  // We're done with the temporary image buffer
+  delete[] data;
 
   // Close output file
   f.close();

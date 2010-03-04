@@ -22,7 +22,7 @@ namespace csg {
 class ImageWriter {
   public:
     enum PixelFormat {
-      pfGray8 = 1
+      pfSigned8 = 1
     };
 
     /// Constructor.
@@ -30,7 +30,7 @@ class ImageWriter {
     {
       mData = 0;
       mWidth = mHeight = 0;
-      mPixelFormat = pfGray8;
+      mPixelFormat = pfSigned8;
     }
 
     /// Define the image format.
