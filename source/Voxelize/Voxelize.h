@@ -17,6 +17,7 @@
 #define _VOXELIZE_H_
 
 #include "../Vector3.h"
+#include "../BoundingBox.h"
 
 namespace csg {
 
@@ -26,30 +27,62 @@ typedef signed char Voxel;
 /// Maximum voxel value
 #define VOXEL_MAX 127
 
+/// Voxel sampler space definition class.
+class SampleSpace {
+  public:
+    /// Sanity check of the sample space parameters.
+    inline bool IsValid()
+    {
+      return ((mDiv[0] >= 1) && (mDiv[1] >= 1) && (mDiv[2] >= 1) &&
+              (mAABB.mMax.x > mAABB.mMin.x) && (mAABB.mMax.y > mAABB.mMin.y) &&
+              (mAABB.mMax.z > mAABB.mMin.z));
+    }
+
+    /// Return the voxel spacing (voxel size).
+    inline Vector3 VoxelSize()
+    {
+      Vector3 d = mAABB.Diagonal();
+      d.x /= mDiv[0];
+      d.y /= mDiv[1];
+      d.z /= mDiv[2];
+      return d;
+    }
+
+    BoundingBox mAABB; ///< Bonding box for the voxel space.
+    int mDiv[3];       ///< Number of divisions of the voxel space (x, y, z).
+};
 
 /// Voxelize class.
 class Voxelize {
   public:
     /// Constructor.
-    Voxelize();
+    Voxelize()
+    {
+      mSampleSpace = 0;
+    }
 
     /// Destructor.
     virtual ~Voxelize() {}
 
-    /// Define the voxel space boundaries and resolution.
-    void SetVoxelSpace(float aMinX, float aMinY, float aMinZ,
-                       float aMaxX, float aMaxY, float aMaxZ,
-                       int aDivX, int aDivY, int aDivZ);
+    /// Return the minimum enclosing axis aligned bounding box for this shape.
+    inline void GetBoundingBox(BoundingBox &aAABB)
+    {
+      aAABB = mAABB;
+    }
+
+    /// Define the voxel sample space boundaries and resolution.
+    inline void SetSampleSpace(SampleSpace * aSampleSpace)
+    {
+      mSampleSpace = aSampleSpace;
+    }
 
     /// Calculate a single slice of the voxel volume.
     /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
     virtual void CalculateSlice(Voxel * aSlice, int aZ) = 0;
 
   protected:
-    Vector3 mMin; ///< Lower bound of the voxel space bounding box.
-    Vector3 mMax; ///< Upper bound of the voxel space bounding box.
-    int mDiv[3];  ///< Number of divisions of the voxel space (x, y, z).
-    bool mVoxelSpaceDefined; ///< True when SetVoxelSpace has been called.
+    SampleSpace * mSampleSpace; ///< Voxel sample space definition.
+    BoundingBox mAABB;          ///< Shape bouinding box.
 };
 
 }

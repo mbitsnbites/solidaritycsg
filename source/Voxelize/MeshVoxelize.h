@@ -51,6 +51,26 @@ class Triangle {
 /// Generic binary tree node class.
 class TreeNode {
   public:
+    /// Generic constructor (for uninitialized nodes).
+    TreeNode()
+    {
+      mPtr1 = mPtr2 = 0;
+    }
+
+    /// Destructor (recursively destroys all child nodes).
+    ~TreeNode()
+    {
+      if(mPtr1 && mPtr2)
+      {
+        delete (TreeNode *) mPtr1;
+        delete (TreeNode *) mPtr2;
+      }
+      else if(mPtr1)
+      {
+        delete (Triangle *) mPtr1;
+      }
+    }
+
     /// Check if this is a leaf node.
     inline bool IsLeafNode()
     {
@@ -81,7 +101,7 @@ class TreeNode {
       return (TreeNode *) mPtr2;
     }
 
-  private:
+  protected:
     void * mPtr1;   ///< Pointer to child A (mPtr2!=0) or a Triangle object (mPtr2==0)
     void * mPtr2;   ///< Pointer to child B, or zero (for leaf nodes)
 };
@@ -104,8 +124,6 @@ class XYTreeNode : public TreeNode {
   private:
     double mMin[2]; ///< Lower bound
     double mMax[2]; ///< Upper bound
-    void * mPtr1;   ///< Pointer to child A (mPtr2!=0) or a Triangle object (mPtr2==0)
-    void * mPtr2;   ///< Pointer to child B, or zero (for leaf nodes)
 };
 
 /// Bounding interval tree node class.
@@ -125,18 +143,26 @@ class ZTreeNode : public TreeNode {
   private:
     double mMinZ;   ///< Lower bound
     double mMaxZ;   ///< Upper bound
-    void * mPtr1;   ///< Pointer to child A (mPtr2!=0) or a Triangle object (mPtr2==0)
-    void * mPtr2;   ///< Pointer to child B, or zero (for leaf nodes)
 };
 
 /// Voxelize class for mesh objects.
 class MeshVoxelize : public Voxelize {
   public:
     /// Constructor.
-    MeshVoxelize();
+    MeshVoxelize()
+    {
+      mRectTree = 0;
+      mHeightTree = 0;
+    }
 
     /// Destructor.
-    virtual ~MeshVoxelize();
+    virtual ~MeshVoxelize()
+    {
+      if(mRectTree)
+        delete mRectTree;
+      if(mHeightTree)
+        delete mHeightTree;
+    }
 
     /// Define the triangle surface to be voxelized.
     /// A copy of the triangle surface is made internally in the Voxelize
@@ -155,6 +181,12 @@ class MeshVoxelize : public Voxelize {
 
     /// Vertex coordinates.
     std::vector<Vector3> mVertices;
+
+    /// 2D binary rectangle tree.
+    XYTreeNode * mRectTree;
+
+    /// 1D binary interval tree.
+    ZTreeNode * mHeightTree;
 };
 
 }

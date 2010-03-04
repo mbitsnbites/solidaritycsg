@@ -13,34 +13,26 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SPHEREVOXELIZE_H_
-#define _SPHEREVOXELIZE_H_
+#ifndef _BOUNDINGBOX_H_
+#define _BOUNDINGBOX_H_
 
-#include "Voxelize.h"
+#include "Vector3.h"
 
 namespace csg {
 
-/// Voxelize class for sphere objects.
-class SphereVoxelize : public Voxelize {
+/// Axis aligned bounding box class.
+class BoundingBox {
   public:
-    /// Constructor.
-    SphereVoxelize() {}
+    /// Get the diagonal of the bounding box.
+    inline Vector3 Diagonal()
+    {
+      return mMax - mMin;
+    }
 
-    /// Destructor.
-    virtual ~SphereVoxelize() {}
-
-    /// Define the sphere to be voxelized.
-    void SetSphere(Vector3 aCenter, double aRadius);
-
-    /// Calculate a single slice of the voxel volume.
-    /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
-    virtual void CalculateSlice(Voxel * aSlice, int aZ);
-
-  private:
-    Vector3 mCenter; ///< Sphere center.
-    double mRadius;  ///< Sphere radius.
+    Vector3 mMin; ///< Lower bound of the bounding box.
+    Vector3 mMax; ///< Upper bound of the bounding box.
 };
 
 }
 
-#endif // _SPHEREVOXELIZE_H_
+#endif // _BOUNDINGBOX_H_
