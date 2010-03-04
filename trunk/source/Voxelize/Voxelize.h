@@ -24,7 +24,7 @@ namespace csg {
 typedef signed char Voxel;
 
 /// Maximum voxel value
-#define VOXEL_MAX 128
+#define VOXEL_MAX 127
 
 
 /// Voxelize class.
@@ -45,10 +45,11 @@ class Voxelize {
     /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
     virtual void CalculateSlice(Voxel * aSlice, int aZ) = 0;
 
-  private:
+  protected:
     Vector3 mMin; ///< Lower bound of the voxel space bounding box.
     Vector3 mMax; ///< Upper bound of the voxel space bounding box.
     int mDiv[3];  ///< Number of divisions of the voxel space (x, y, z).
+    bool mVoxelSpaceDefined; ///< True when SetVoxelSpace has been called.
 };
 
 }
