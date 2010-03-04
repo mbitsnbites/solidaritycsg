@@ -14,9 +14,11 @@
 */
 
 #include "Voxelize.h"
+#include <stdexcept>
+
+using namespace std;
 
 namespace csg {
-
 
 //-----------------------------------------------------------------------------
 // Voxelize
@@ -24,22 +26,27 @@ namespace csg {
 
 Voxelize::Voxelize()
 {
-  // FIXME!
-}
-
-Voxelize::~Voxelize()
-{
-  // FIXME!
+  mVoxelSpaceDefined = false;
 }
 
 void Voxelize::SetVoxelSpace(float aMinX, float aMinY, float aMinZ, float aMaxX,
   float aMaxY, float aMaxZ, int aDivX, int aDivY, int aDivZ)
 {
+  // Sanity check: are these valid parameters?
+  if((aDivX < 1) || (aDivY < 1) || (aDivZ < 1) ||
+     ((aMaxX - aMinX) <= 0.0) || ((aMaxY - aMinY) <= 0.0) ||
+     ((aMaxZ - aMinZ) <= 0.0))
+    throw runtime_error("Invalid voxel space dimensions.");
+
+  // Store voxel space dimensions
   mMin = Vector3(aMinX, aMinY, aMinZ);
   mMax = Vector3(aMaxX, aMaxY, aMaxZ);
   mDiv[0] = aDivX;
   mDiv[1] = aDivY;
   mDiv[2] = aDivZ;
+
+  // The voxel space is now defined
+  mVoxelSpaceDefined = true;
 }
 
 }

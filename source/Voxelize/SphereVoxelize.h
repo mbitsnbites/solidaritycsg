@@ -39,7 +39,6 @@ class SphereVoxelize : public Voxelize {
   private:
     Vector3 mCenter; ///< Sphere center.
     double mRadius;  ///< Sphere radius.
-    double mRadius2; ///< Sphere radius squared.
 };
 
 }

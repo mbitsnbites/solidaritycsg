@@ -14,6 +14,7 @@
 */
 
 #include "MeshVoxelize.h"
+#include <stdexcept>
 
 using namespace std;
 
@@ -210,12 +211,11 @@ ZTreeNode::ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB)
 
 MeshVoxelize::MeshVoxelize()
 {
-  // FIXME!
+  mVoxelSpaceDefined = false;
 }
 
 MeshVoxelize::~MeshVoxelize()
 {
-  // FIXME!
 }
 
 void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
@@ -250,6 +250,10 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
 
 void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
+  // Check that the voxel space has been properly set up
+  if(!mVoxelSpaceDefined)
+    throw runtime_error("Undefined voxel space dimensions.");
+
   // FIXME!
 }
 
