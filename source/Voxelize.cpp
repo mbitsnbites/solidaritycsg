@@ -19,30 +19,16 @@ using namespace std;
 
 namespace csg {
 
+//-----------------------------------------------------------------------------
+// Triangle
+//-----------------------------------------------------------------------------
+
 void Triangle::SetCoordinates(Vector3 * p1, Vector3 * p2, Vector3 * p3)
 {
   // Assign vertex coordinate pointers
   mVertices[0] = p1;
   mVertices[1] = p2;
   mVertices[2] = p3;
-
-  // Calculate triangle AABB
-  mMin = mMax = *mVertices[0];
-  for(int i = 1; i <= 2; ++ i)
-  {
-    if(mVertices[i]->x < mMin.x)
-      mMin.x = mVertices[i]->x;
-    else if(mVertices[i]->x > mMax.x)
-      mMax.x = mVertices[i]->x;
-    if(mVertices[i]->y < mMin.y)
-      mMin.y = mVertices[i]->y;
-    else if(mVertices[i]->y > mMax.y)
-      mMax.y = mVertices[i]->y;
-    if(mVertices[i]->z < mMin.z)
-      mMin.z = mVertices[i]->z;
-    else if(mVertices[i]->z > mMax.z)
-      mMax.z = mVertices[i]->z;
-  }
 
   // Calculate triangle normal (normalized cross product)
   Vector3 v1 = *p2 - *p1;
@@ -55,9 +41,6 @@ void Triangle::SetCoordinates(Vector3 * p1, Vector3 * p2, Vector3 * p3)
 
 bool Triangle::IntersectPlane(double aPlaneZ, Vector3 * p1, Vector3 * p2)
 {
-  if((aPlaneZ < mMin.z) || (aPlaneZ > mMax.z))
-    return false;
-
   double d[3], s;
   d[0] = mVertices[0]->z - aPlaneZ;
   d[1] = mVertices[1]->z - aPlaneZ;
@@ -101,15 +84,6 @@ bool Triangle::IntersectPlane(double aPlaneZ, Vector3 * p1, Vector3 * p2)
 
 double Triangle::IntersectZRay(Vector3 aOrigin)
 {
-  // Outside bounding rectangle?
-  if((aOrigin.x < mMin.x) || (aOrigin.x > mMax.x) ||
-     (aOrigin.y < mMin.y) || (aOrigin.y > mMax.y))
-     return -1.0;
-
-  // Early-out culling: is the ray origin above the triangle top?
-  if(aOrigin.z > mMax.z)
-     return -1.0;
-
   // Is the triangle parallel to the ray?
   if(fabs(mNormal.z) < 1e-50)
     return -1.0;
@@ -144,6 +118,96 @@ double Triangle::IntersectZRay(Vector3 aOrigin)
   return -(mNormal.x * w0.x + mNormal.y * w0.y) / mNormal.z - w0.z;
 }
 
+
+//-----------------------------------------------------------------------------
+// XYTreeNode
+//-----------------------------------------------------------------------------
+
+XYTreeNode::XYTreeNode(Triangle * aTriangle)
+{
+  // Set pointers
+  mPtr1 = (void *) aTriangle;
+  mPtr2 = 0;
+
+  // Calculate leaf node bounding rectangle
+  mMin[0] = mMax[0] = aTriangle->mVertices[0]->x;
+  mMin[1] = mMax[1] = aTriangle->mVertices[0]->y;
+  for(int i = 1; i <= 2; ++ i)
+  {
+    if(aTriangle->mVertices[i]->x < mMin[0])
+      mMin[0] = aTriangle->mVertices[i]->x;
+    else if(aTriangle->mVertices[i]->x > mMax[0])
+      mMax[0] = aTriangle->mVertices[i]->x;
+    if(aTriangle->mVertices[i]->y < mMin[1])
+      mMin[1] = aTriangle->mVertices[i]->y;
+    else if(aTriangle->mVertices[i]->y > mMax[1])
+      mMax[1] = aTriangle->mVertices[i]->y;
+  }
+}
+
+XYTreeNode::XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB)
+{
+  // Set pointers
+  mPtr1 = (void *) aChildA;
+  mPtr2 = (void *) aChildB;
+
+  // Calculate node bounding rectangle
+  for(int i = 0; i < 2; ++ i)
+  {
+    if(aChildA->mMin[i] < aChildB->mMin[i])
+      mMin[i] = aChildA->mMin[i];
+    else
+      mMin[i] = aChildB->mMin[i];
+    if(aChildA->mMax[i] > aChildB->mMax[i])
+      mMax[i] = aChildA->mMax[i];
+    else
+      mMax[i] = aChildB->mMax[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+// ZTreeNode
+//-----------------------------------------------------------------------------
+
+ZTreeNode::ZTreeNode(Triangle * aTriangle)
+{
+  // Set pointers
+  mPtr1 = (void *) aTriangle;
+  mPtr2 = 0;
+
+  // Calculate leaf node bounding interval
+  mMinZ = mMaxZ = aTriangle->mVertices[0]->z;
+  for(int i = 1; i <= 2; ++ i)
+  {
+    if(aTriangle->mVertices[i]->z < mMinZ)
+      mMinZ = aTriangle->mVertices[i]->z;
+    else if(aTriangle->mVertices[i]->z > mMaxZ)
+      mMaxZ = aTriangle->mVertices[i]->z;
+  }
+}
+
+ZTreeNode::ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB)
+{
+  // Set pointers
+  mPtr1 = (void *) aChildA;
+  mPtr2 = (void *) aChildB;
+
+  // Calculate node bounding interval
+  if(aChildA->mMinZ < aChildB->mMinZ)
+    mMinZ = aChildA->mMinZ;
+  else
+    mMinZ = aChildB->mMinZ;
+  if(aChildA->mMaxZ > aChildB->mMaxZ)
+    mMaxZ = aChildA->mMaxZ;
+  else
+    mMaxZ = aChildB->mMaxZ;
+}
+
+
+//-----------------------------------------------------------------------------
+// Voxelize
+//-----------------------------------------------------------------------------
+
 Voxelize::Voxelize()
 {
   // FIXME!
@@ -176,6 +240,12 @@ void Voxelize::SetTriangles(int aTriangleCount, int * aIndices,
                                  &mVertices[iPtr[2]]);
     iPtr += 3;
   }
+
+  // Build 2D bounding rectangle tree (XY)
+  // FIXME!
+
+  // Build 1D bounding interval tree (Z)
+  // FIXME!
 }
 
 void Voxelize::SetVoxelSpace(float aMinX, float aMinY, float aMinZ, float aMaxX,
