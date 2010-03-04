@@ -24,43 +24,41 @@ namespace csg {
 // SphereVoxelize
 //-----------------------------------------------------------------------------
 
-SphereVoxelize::SphereVoxelize()
-{
-  mVoxelSpaceDefined = false;
-}
-
-SphereVoxelize::~SphereVoxelize()
-{
-}
-
 void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius)
 {
+  // Collect sphere parameters
   mCenter = aCenter;
   mRadius = aRadius;
+
+  // Update the shape bounding box
+  Vector3 r = Vector3(mRadius, mRadius, mRadius);
+  mAABB.mMin = mCenter - r;
+  mAABB.mMax = mCenter + r;
 }
 
 void SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
   // Check that the voxel space has been properly set up
-  if(!mVoxelSpaceDefined)
-    throw runtime_error("Undefined voxel space dimensions.");
+  if(!mSampleSpace || !mSampleSpace->IsValid())
+    throw runtime_error("Undefined/invalid voxel space dimensions.");
 
   // Calculate voxel size (diagonal of a voxel box)
-  double dx = (mMax.x - mMin.x) / mDiv[0];
-  double dy = (mMax.y - mMin.y) / mDiv[1];
-  double dz = (mMax.z - mMin.z) / mDiv[2];
-  double voxelSizeInv = 1.0 / sqrt(dx * dx + dy * dy + dz * dz);
+  Vector3 d = mSampleSpace->VoxelSize();
+  double voxelSizeInv = d.Abs();
+  if(voxelSizeInv < 1e-50)
+    throw runtime_error("Invalid voxel space dimensions.");
+  voxelSizeInv = 1.0 / d.Abs();
 
   // Generate slice
   Voxel * vPtr = aSlice;
   Vector3 p;
-  p.z = mMin.z + dz * aZ;
-  for(int i = 0; i < mDiv[0]; ++ i)
+  p.z = mSampleSpace->mAABB.mMin.z + d.z * aZ;
+  for(int i = 0; i < mSampleSpace->mDiv[0]; ++ i)
   {
-    p.y = mMin.y + dy * i;
-    for(int j = 0; j < mDiv[0]; ++ j)
+    p.y = mSampleSpace->mAABB.mMin.y + d.y * i;
+    for(int j = 0; j < mSampleSpace->mDiv[0]; ++ j)
     {
-      p.x = mMin.x + dx * j;
+      p.x = mSampleSpace->mAABB.mMin.x + d.x * j;
 
       // Calculate distance from point to the shape surface
       double dist = (mRadius - (p - mCenter).Abs()) * voxelSizeInv;

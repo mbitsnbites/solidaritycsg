@@ -209,15 +209,6 @@ ZTreeNode::ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB)
 // MeshVoxelize
 //-----------------------------------------------------------------------------
 
-MeshVoxelize::MeshVoxelize()
-{
-  mVoxelSpaceDefined = false;
-}
-
-MeshVoxelize::~MeshVoxelize()
-{
-}
-
 void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
   int aVertexCount, float * aVertices)
 {
@@ -246,13 +237,16 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
 
   // Build 1D bounding interval tree (Z)
   // FIXME!
+
+  // Update the shape bounding box
+  // FIXME
 }
 
 void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
   // Check that the voxel space has been properly set up
-  if(!mVoxelSpaceDefined)
-    throw runtime_error("Undefined voxel space dimensions.");
+  if(!mSampleSpace || !mSampleSpace->IsValid())
+    throw runtime_error("Undefined/invalid voxel space dimensions.");
 
   // FIXME!
 }
