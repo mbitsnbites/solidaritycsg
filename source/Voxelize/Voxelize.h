@@ -17,7 +17,7 @@
 #define _VOXELIZE_H_
 
 #include <vector>
-#include "Vector3.h"
+#include "../Vector3.h"
 
 namespace csg {
 
