@@ -14,7 +14,7 @@
 #-----------------------------------------------------------------------------------------
 
 CPP = g++
-CPPFLAGS = -g -O3 -W -Wall -c
+CPPFLAGS = -O3 -W -Wall -c
 LIB = ar
 LIBFLAGS = -rcs
 DEPEND = g++ -MM
