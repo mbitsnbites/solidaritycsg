@@ -5,4 +5,10 @@ MeshVoxelize.o: Voxelize/MeshVoxelize.cpp Voxelize/MeshVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
   Voxelize/../Vector3.h
 TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
-  FileIO/ImageWriter.h
+  FileIO/ImageWriter.h FileIO/../Voxelize/Voxelize.h \
+  FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../BoundingBox.h \
+  FileIO/../Voxelize/../Vector3.h
+CSGNode.o: Boolean/CSGNode.cpp Boolean/CSGNode.h Boolean/../BoundingBox.h \
+  Boolean/../Vector3.h Boolean/../Voxelize/Voxelize.h \
+  Boolean/../Voxelize/../Vector3.h Boolean/../Voxelize/../BoundingBox.h
+BoundingBox.o: BoundingBox.cpp BoundingBox.h Vector3.h
