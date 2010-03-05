@@ -40,7 +40,7 @@ class CSGNode {
 };
 
 /// Parent class for composite CSG nodes (e.g. union and intersection).
-class CSGCompositeNode {
+class CSGCompositeNode : public CSGNode {
   public:
     /// Destructor.
     virtual ~CSGCompositeNode();
