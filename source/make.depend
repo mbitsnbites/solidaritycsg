@@ -1,0 +1,8 @@
+SphereVoxelize.o: Voxelize/SphereVoxelize.cpp Voxelize/SphereVoxelize.h \
+  Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
+  Voxelize/../Vector3.h
+MeshVoxelize.o: Voxelize/MeshVoxelize.cpp Voxelize/MeshVoxelize.h \
+  Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
+  Voxelize/../Vector3.h
+TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
+  FileIO/ImageWriter.h

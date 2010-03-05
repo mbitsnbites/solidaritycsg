@@ -14,17 +14,33 @@
 #-----------------------------------------------------------------------------------------
 
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c -I../source
-LFLAGS = -L../source -s
-LIBS = -lsolidaritycsg
+CPPFLAGS = -O3 -W -Wall -c
+LIB = ar
+LIBFLAGS = -rcs
+DEPEND = g++ -MM
 
-# For Windows - set this to .exe, otherwise leave it empty
-EXE = .exe
+STATICLIB = libsolidaritycsg.a
 
-all: demo$(EXE)
+OBJS = SphereVoxelize.o \
+       MeshVoxelize.o \
+       TGAImageWriter.o
 
-demo$(EXE): demo.o
-	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
+SRCS = Voxelize/SphereVoxelize.cpp \
+       Voxelize/MeshVoxelize.cpp \
+       FileIO/TGAImageWriter.cpp
 
-%.o: %.cpp
+all: $(STATICLIB)
+
+%.o: Voxelize/%.cpp
 	$(CPP) $(CPPFLAGS) $<
+
+%.o: FileIO/%.cpp
+	$(CPP) $(CPPFLAGS) $<
+
+$(STATICLIB): $(OBJS)
+	$(LIB) $(LIBFLAGS) $@ $(OBJS)
+
+depend:
+	$(DEPEND) $(SRCS) > make.depend
+
+-include make.depend

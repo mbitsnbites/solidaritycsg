@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "../source/SolidarityCSG.h"
+#include <SolidarityCSG.h>
 
 using namespace csg;
 using namespace std;
