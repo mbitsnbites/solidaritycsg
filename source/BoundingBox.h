@@ -29,6 +29,12 @@ class BoundingBox {
       return mMax - mMin;
     }
 
+    /// Calculate the union with another bounding box.
+    void Union(BoundingBox &aBoundingBox);
+
+    /// Calculate the intersection with another bounding box.
+    void Intersection(BoundingBox &aBoundingBox);
+
     Vector3 mMin; ///< Lower bound of the bounding box.
     Vector3 mMax; ///< Upper bound of the bounding box.
 };

@@ -23,18 +23,28 @@ STATICLIB = libsolidaritycsg.a
 
 OBJS = SphereVoxelize.o \
        MeshVoxelize.o \
-       TGAImageWriter.o
+       TGAImageWriter.o \
+       CSGNode.o \
+       BoundingBox.o
 
 SRCS = Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
-       FileIO/TGAImageWriter.cpp
+       FileIO/TGAImageWriter.cpp \
+       Boolean/CSGNode.cpp \
+       BoundingBox.cpp
 
 all: $(STATICLIB)
+
+%.o: %.cpp
+	$(CPP) $(CPPFLAGS) $<
 
 %.o: Voxelize/%.cpp
 	$(CPP) $(CPPFLAGS) $<
 
 %.o: FileIO/%.cpp
+	$(CPP) $(CPPFLAGS) $<
+
+%.o: Boolean/%.cpp
 	$(CPP) $(CPPFLAGS) $<
 
 $(STATICLIB): $(OBJS)

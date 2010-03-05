@@ -16,6 +16,8 @@
 #ifndef _IMAGEWRITER_H_
 #define _IMAGEWRITER_H_
 
+#include "../Voxelize/Voxelize.h"
+
 namespace csg {
 
 /// Image writer base class.
@@ -31,6 +33,8 @@ class ImageWriter {
       mData = 0;
       mWidth = mHeight = 0;
       mPixelFormat = pfSigned8;
+      mSampleSpace = 0;
+      mSliceNo = 0;
     }
 
     /// Define the image format.
@@ -39,6 +43,18 @@ class ImageWriter {
       mWidth = aWidth;
       mHeight = aHeight;
       mPixelFormat = aPixelFormat;
+    }
+
+    /// Define the sample space (dimensions).
+    inline void SetSampleSpace(SampleSpace * aSampleSpace)
+    {
+      mSampleSpace = aSampleSpace;
+    }
+
+    /// Define the current slice number.
+    inline void SetSliceNo(int aSliceNo)
+    {
+      mSliceNo = aSliceNo;
     }
 
     /// Define the image data.
@@ -51,10 +67,12 @@ class ImageWriter {
     virtual void SaveToFile(const char * aFileName) = 0;
 
   protected:
-    void * mData;              ///< Image pixel data.
-    int mWidth;                ///< Bitmap width.
-    int mHeight;               ///< Bitmap height.
-    PixelFormat mPixelFormat;  ///< Pixel format.
+    void * mData;               ///< Image pixel data.
+    int mWidth;                 ///< Bitmap width.
+    int mHeight;                ///< Bitmap height.
+    PixelFormat mPixelFormat;   ///< Pixel format.
+    SampleSpace * mSampleSpace; ///< Sample space definition
+    int mSliceNo;               ///< Current slice number.
 };
 
 }
