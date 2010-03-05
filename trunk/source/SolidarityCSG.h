@@ -20,6 +20,7 @@
 #include "Voxelize/SphereVoxelize.h"
 #include "Voxelize/MeshVoxelize.h"
 #include "FileIO/TGAImageWriter.h"
+#include "Boolean/CSGNode.h"
 
 
 //-----------------------------------------------------------------------------

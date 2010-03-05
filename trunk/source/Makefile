@@ -14,10 +14,11 @@
 #-----------------------------------------------------------------------------------------
 
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c
+CPPFLAGS = -g -O3 -W -Wall -c
 LIB = ar
 LIBFLAGS = -rcs
 DEPEND = g++ -MM
+RM = del /Q
 
 STATICLIB = libsolidaritycsg.a
 
@@ -34,6 +35,9 @@ SRCS = Voxelize/SphereVoxelize.cpp \
        BoundingBox.cpp
 
 all: $(STATICLIB)
+
+clean:
+	$(RM) $(OBJS) $(STATICLIB)
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $<

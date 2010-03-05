@@ -176,7 +176,7 @@ void CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
     {
       (*i)->ComposeSlice(&mTmpSlice[0], aZ);
       for(unsigned int k = 0; k < mTmpSlice.size(); ++ k)
-        aSlice[k] = MAX(aSlice[k], -mTmpSlice[k]);
+        aSlice[k] = MIN(aSlice[k], -mTmpSlice[k]);
     }
     first = false;
   }
@@ -193,11 +193,12 @@ CSGShape::~CSGShape()
     delete mVoxelize;
 }
 
-void CSGShape::SetShape(Voxelize * aVoxelize)
+Voxelize * CSGShape::DefineShape(Voxelize * aVoxelize)
 {
   if(mVoxelize)
     delete mVoxelize;
   mVoxelize = aVoxelize;
+  return aVoxelize;
 }
 
 void CSGShape::SetSampleSpace(SampleSpace * aSampleSpace)
