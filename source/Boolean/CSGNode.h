@@ -23,11 +23,11 @@
 
 namespace csg {
 
-/// CSG tree node class (purely virtual).
+/// CSG tree node class.
 class CSGNode {
   public:
     /// Destructor.
-    virtual ~CSGNode() = 0;
+    virtual ~CSGNode() {}
 
     /// Return the composite bounding box for this node (and all its children).
     virtual void SetSampleSpace(SampleSpace * aSampleSpace) = 0;
@@ -47,6 +47,13 @@ class CSGCompositeNode {
 
     /// Define the sample space.
     virtual void SetSampleSpace(SampleSpace * aSampleSpace);
+
+    /// Append a new child.
+    inline CSGNode * AddChild(CSGNode * aChild)
+    {
+      mChildren.push_back(aChild);
+      return aChild;
+    }
 
   protected:
     std::list<CSGNode *> mChildren;  ///< List of child nodes.
@@ -96,7 +103,7 @@ class CSGShape : public CSGNode {
     virtual ~CSGShape();
 
     /// Define the shape.
-    void SetShape(Voxelize * aVoxelize);
+    Voxelize * DefineShape(Voxelize * aVoxelize);
 
     /// Define the sample space.
     virtual void SetSampleSpace(SampleSpace * aSampleSpace);
