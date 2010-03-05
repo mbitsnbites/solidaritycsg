@@ -29,7 +29,7 @@ class CSGNode {
     /// Destructor.
     virtual ~CSGNode() {}
 
-    /// Return the composite bounding box for this node (and all its children).
+    /// Define the sample space.
     virtual void SetSampleSpace(SampleSpace * aSampleSpace) = 0;
 
     /// Return the composite bounding box for this node (and all its children).
