@@ -23,28 +23,33 @@ using namespace std;
 
 int main(int argc, char ** argv)
 {
-  // Set up a sphere
-  SphereVoxelize sv;
-  sv.SetSphere(Vector3(0.0, 0.0, 0.0), 2.0);
+  // Set up boolean tree
+  CSGDifference csg;
+  CSGShape * node1 = (CSGShape *) csg.AddChild(new CSGShape());
+  SphereVoxelize * s1 = (SphereVoxelize *) node1->DefineShape(new SphereVoxelize());
+  s1->SetSphere(Vector3(-0.5, 0.0, 0.0), 2.0);
+  CSGShape * node2 = (CSGShape *) csg.AddChild(new CSGShape());
+  SphereVoxelize * s2 = (SphereVoxelize *) node2->DefineShape(new SphereVoxelize());
+  s2->SetSphere(Vector3(0.5, 0.0, 0.3), 1.5);
 
   // Set up a sample space
   SampleSpace space;
-  sv.GetBoundingBox(space.mAABB);
+  csg.GetBoundingBox(space.mAABB);
   space.mDiv[0] = 256;
   space.mDiv[1] = 256;
   space.mDiv[2] = 256;
+  csg.SetSampleSpace(&space);
 
   // Prepare image writer
   TGAImageWriter output;
   output.SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
 
   // Begin voxelization
-  sv.SetSampleSpace(&space);
   Voxel * voxelSlice = new Voxel[space.mDiv[0] * space.mDiv[1]];
   for(int i = 0; i < space.mDiv[2]; ++ i)
   {
     // Generate slice data
-    sv.CalculateSlice(voxelSlice, i);
+    csg.ComposeSlice(voxelSlice, i);
 
     // Write this file to disk
     stringstream name;

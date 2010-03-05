@@ -17,11 +17,15 @@ CPP = g++
 CPPFLAGS = -O3 -W -Wall -c -I../source
 LFLAGS = -L../source -s
 LIBS = -lsolidaritycsg
+RM = del /Q
 
 # For Windows - set this to .exe, otherwise leave it empty
 EXE = .exe
 
 all: demo$(EXE)
+
+clean:
+	$(RM) demo.o demo$(EXE)
 
 demo$(EXE): demo.o
 	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
