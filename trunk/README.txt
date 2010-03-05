@@ -7,6 +7,15 @@ SolidarityCSG is a library for quick and robust constructive solid geometry
 As input and output, the library supports triangle geometries (meshes), and
 internally the library uses a voxelized representation of the volumes.
 
+Building
+--------
+
+1) In the "source" folder, type "make".
+2) In the "tools" folder, type "make".
+
+For Windows users, "make" with "mingw32-make" (requires MinGW).
+
+
 License
 -------
 
