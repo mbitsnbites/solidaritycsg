@@ -8,6 +8,9 @@ TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
   FileIO/ImageWriter.h FileIO/../Voxelize/Voxelize.h \
   FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../BoundingBox.h \
   FileIO/../Voxelize/../Vector3.h
+Mesh.o: FileIO/Mesh.cpp FileIO/Mesh.h FileIO/../Vector3.h
+STLMeshReader.o: FileIO/STLMeshReader.cpp FileIO/STLMeshReader.h \
+  FileIO/MeshReader.h FileIO/Mesh.h FileIO/../Vector3.h
 CSGNode.o: Boolean/CSGNode.cpp Boolean/CSGNode.h Boolean/../BoundingBox.h \
   Boolean/../Vector3.h Boolean/../Voxelize/Voxelize.h \
   Boolean/../Voxelize/../Vector3.h Boolean/../Voxelize/../BoundingBox.h

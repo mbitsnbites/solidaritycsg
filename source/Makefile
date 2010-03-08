@@ -27,12 +27,16 @@ STATICLIB = libsolidaritycsg.a
 OBJS = SphereVoxelize.o \
        MeshVoxelize.o \
        TGAImageWriter.o \
+       Mesh.o \
+       STLMeshReader.o \
        CSGNode.o \
        BoundingBox.o
 
 SRCS = Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
        FileIO/TGAImageWriter.cpp \
+       FileIO/Mesh.cpp \
+       FileIO/STLMeshReader.cpp \
        Boolean/CSGNode.cpp \
        BoundingBox.cpp
 

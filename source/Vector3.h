@@ -67,6 +67,16 @@ class Vector3 {
       z += v.z;
     }
 
+    inline bool operator==(const Vector3 &v) const
+    {
+      return (z == v.z) && (y == v.y) && (x == v.x);
+    }
+
+    inline bool operator!=(const Vector3 &v) const
+    {
+      return (z != v.z) || (y != v.y) || (x != v.x);
+    }
+
     inline double Abs()
     {
       return sqrt(x * x + y * y + z * z);
