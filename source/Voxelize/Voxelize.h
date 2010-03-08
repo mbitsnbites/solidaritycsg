@@ -50,6 +50,17 @@ class SampleSpace {
       return d;
     }
 
+    /// Define the sample space. This method calculates the optimal sample
+    /// space parameters, based on the given minimal enclosing bounding box
+    /// and the desired resolution.
+    void DefineSpace(BoundingBox &aAABB, Vector3 aResolution);
+
+    /// Define the sample space (uniform resolution).
+    inline void DefineSpace(BoundingBox &aAABB, double aResolution)
+    {
+      DefineSpace(aAABB, Vector3(aResolution, aResolution, aResolution));
+    }
+
     BoundingBox mAABB; ///< Bonding box for the voxel space.
     int mDiv[3];       ///< Number of divisions of the voxel space (x, y, z).
 };

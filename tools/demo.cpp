@@ -60,10 +60,9 @@ int main(int argc, char ** argv)
     // Set up a sample space
     cout << "Setting up voxel sample space..." << flush;
     SampleSpace space;
-    csg.GetBoundingBox(space.mAABB);
-    space.mDiv[0] = 256;
-    space.mDiv[1] = 256;
-    space.mDiv[2] = 256;
+    BoundingBox sceneAABB;
+    csg.GetBoundingBox(sceneAABB);
+    space.DefineSpace(sceneAABB, 0.02);
     csg.SetSampleSpace(&space);
     cout << "done!" << endl;
 

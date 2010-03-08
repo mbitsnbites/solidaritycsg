@@ -24,7 +24,8 @@ RM = del /Q
 
 STATICLIB = libsolidaritycsg.a
 
-OBJS = SphereVoxelize.o \
+OBJS = Voxelize.o \
+       SphereVoxelize.o \
        MeshVoxelize.o \
        TGAImageWriter.o \
        Mesh.o \
@@ -34,7 +35,8 @@ OBJS = SphereVoxelize.o \
        BoundingBox.o \
        Vector3.o
 
-SRCS = Voxelize/SphereVoxelize.cpp \
+SRCS = Voxelize/Voxelize.cpp \
+       Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
        FileIO/TGAImageWriter.cpp \
        FileIO/Mesh.cpp \
