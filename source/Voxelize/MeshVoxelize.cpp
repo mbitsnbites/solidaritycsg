@@ -36,10 +36,7 @@ void Triangle::SetCoordinates(Vector3 * p1, Vector3 * p2, Vector3 * p3)
   // Calculate triangle normal (normalized cross product)
   Vector3 v1 = *p2 - *p1;
   Vector3 v2 = *p3 - *p1;
-  mNormal.x = v1.y * v2.z - v1.z * v2.y;
-  mNormal.y = v1.z * v2.x - v1.x * v2.z;
-  mNormal.z = v1.x * v2.y - v1.y * v2.x;
-  mNormal = mNormal.Normalize();
+  mNormal = Cross(v1, v2).Normalize();
 }
 
 bool Triangle::IntersectPlane(double aPlaneZ, Vector3 * p1, Vector3 * p2)

@@ -29,16 +29,20 @@ OBJS = SphereVoxelize.o \
        TGAImageWriter.o \
        Mesh.o \
        STLMeshReader.o \
+       STLMeshWriter.o \
        CSGNode.o \
-       BoundingBox.o
+       BoundingBox.o \
+       Vector3.o
 
 SRCS = Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
        FileIO/TGAImageWriter.cpp \
        FileIO/Mesh.cpp \
        FileIO/STLMeshReader.cpp \
+       FileIO/STLMeshWriter.cpp \
        Boolean/CSGNode.cpp \
-       BoundingBox.cpp
+       BoundingBox.cpp \
+       Vector3.cpp
 
 all: $(STATICLIB)
 
