@@ -1,3 +1,5 @@
+Voxelize.o: Voxelize/Voxelize.cpp Voxelize/Voxelize.h \
+  Voxelize/../Vector3.h Voxelize/../BoundingBox.h Voxelize/../Vector3.h
 SphereVoxelize.o: Voxelize/SphereVoxelize.cpp Voxelize/SphereVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
   Voxelize/../Vector3.h
