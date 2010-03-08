@@ -21,7 +21,9 @@
 // This is the master include file, so include everything...
 #include "Voxelize/SphereVoxelize.h"
 #include "Voxelize/MeshVoxelize.h"
+#include "FileIO/Mesh.h"
 #include "FileIO/TGAImageWriter.h"
+#include "FileIO/STLMeshReader.h"
 #include "Boolean/CSGNode.h"
 
 

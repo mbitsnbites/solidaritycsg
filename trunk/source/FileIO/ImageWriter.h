@@ -79,4 +79,4 @@ class ImageWriter {
 
 }
 
-#endif // _VOXELIZE_H_
+#endif // _IMAGEWRITER_H_
