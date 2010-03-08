@@ -13,7 +13,7 @@ Building
 1) In the "source" folder, type "make".
 2) In the "tools" folder, type "make".
 
-For Windows users, "make" with "mingw32-make" (requires MinGW).
+For Windows users, replace "make" with "mingw32-make" (requires MinGW).
 
 
 License
