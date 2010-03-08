@@ -15,35 +15,19 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SOLIDARITYCSG_H_
-#define _SOLIDARITYCSG_H_
+#include "Vector3.h"
 
-// This is the master include file, so include everything...
-#include "Voxelize/SphereVoxelize.h"
-#include "Voxelize/MeshVoxelize.h"
-#include "FileIO/Mesh.h"
-#include "FileIO/TGAImageWriter.h"
-#include "FileIO/STLMeshReader.h"
-#include "FileIO/STLMeshWriter.h"
-#include "Boolean/CSGNode.h"
-
+namespace csg {
 
 //-----------------------------------------------------------------------------
-// BEGIN Doxygen documentation main page:
+// Vector3
 //-----------------------------------------------------------------------------
 
-/**
-@mainpage SolidarityCSG Library
+Vector3 Cross(Vector3 &v1, Vector3 &v2)
+{
+  return Vector3(v1.y * v2.z - v1.z * v2.y,
+                 v1.z * v2.x - v1.x * v2.z,
+                 v1.x * v2.y - v1.y * v2.x);
+}
 
-@section intro_sec Introduction
-
-SolidarityCSG is a library for quick and robust constructive solid geometry
-(CSG).
-
-*/
-
-//-----------------------------------------------------------------------------
-// END Doxygen documentation main page:
-//-----------------------------------------------------------------------------
-
-#endif // _SOLIDARITYCSG_H_
+}

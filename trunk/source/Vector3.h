@@ -94,6 +94,9 @@ class Vector3 {
     double x, y, z;
 };
 
+/// Compute the cross product of two vectors.
+Vector3 Cross(Vector3 &v1, Vector3 &v2);
+
 }
 
 #endif // _VECTOR3_H_

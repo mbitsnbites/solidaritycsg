@@ -33,23 +33,23 @@ static uint32_t ReadUInt32(istream &aStream)
          (((uint32_t) buf[2]) << 16) | (((uint32_t) buf[3]) << 24);
 }
 
-/// Read a single precision 3 x float vector, endian independent.
-static Vector3 ReadVector3(istream &aStream)
+/// Extract a single precision float from a buffer, endian independent.
+static float ExtractFloat(const unsigned char * aBuffer)
 {
   union {
     uint32_t i;
     float  f;
   } val;
-  Vector3 result;
-  val.i = ReadUInt32(aStream);
-  result.x = double(val.f);
-  val.i = ReadUInt32(aStream);
-  result.y = double(val.f);
-  val.i = ReadUInt32(aStream);
-  result.z = double(val.f);
-  return result;
+
+  val.i = ((uint32_t) aBuffer[0]) | (((uint32_t) aBuffer[1]) << 8) |
+          (((uint32_t) aBuffer[2]) << 16) | (((uint32_t) aBuffer[3]) << 24);
+  return val.f;
 }
 
+
+//-----------------------------------------------------------------------------
+// STLMeshReader
+//-----------------------------------------------------------------------------
 
 void STLMeshReader::LoadFromFile(const char * aFileName)
 {
@@ -80,22 +80,24 @@ void STLMeshReader::LoadFromFile(const char * aFileName)
     // Read all the triangle data
     mMesh->mIndices.resize(triangleCount * 3);
     mMesh->mVertices.resize(triangleCount * 3);
-    uint32_t idx = 0;
+    int idx = 0;
     for(uint32_t i = 0; i < triangleCount; ++ i)
     {
-      // Skip the flat normal
-      f.seekg(12, ios::cur);
+      // Read a single triangle (normal + 3 x vertex + padding)
+      char buf[50];
+      f.read(buf, 50);
 
-      // Read the three triangle vertices
-      for(uint32_t j = 0; j < 3; ++ j)
+      // Parse the three triangle vertices
+      unsigned char * ptr = (unsigned char *) &buf[12]; // Skip normal
+      for(int j = 0; j < 3; ++ j)
       {
         mMesh->mIndices[idx] = idx;
-        mMesh->mVertices[idx] = ReadVector3(f);
+        mMesh->mVertices[idx].x = double(ExtractFloat(&ptr[0]));
+        mMesh->mVertices[idx].y = double(ExtractFloat(&ptr[4]));
+        mMesh->mVertices[idx].z = double(ExtractFloat(&ptr[8]));
+        ptr += 12;
         ++ idx;
       }
-
-      // Ignore the two fill bytes
-      f.seekg(2, ios::cur);
     }
 
     // Join all duplicate vertices
