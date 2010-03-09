@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
       // Generate slice data
       csg.ComposeSlice(&voxelSlice[0], i);
 
-      // Write this file to disk
+      // Construct file name for the slice
       stringstream name;
       name << "output_";
       name.fill('0');
@@ -87,7 +87,11 @@ int main(int argc, char ** argv)
       name << i;
       name.width(0);
       name << ".tga";
+
+      // Write this file to disk
       output.SetData(&voxelSlice[0]);
+      output.SetSliceNo(i);
+      output.SetSampleSpace(&space);
       output.SaveToFile(name.str().c_str());
     }
     cout << "done!" << endl;
