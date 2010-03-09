@@ -17,6 +17,7 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <vector>
 #include "TGAImageWriter.h"
 
 using namespace std;
@@ -66,15 +67,14 @@ void TGAImageWriter::SaveToFile(const char * aFileName)
 
   // Convert the image to the output format
   int imgSize = mWidth * mHeight;
-  unsigned char * data = new unsigned char[imgSize];
+  vector<unsigned char> data(imgSize);
+  char * src = (char *)mData;
+  unsigned char * dst = &data[0];
   for(int i = 0; i < imgSize; ++ i)
-    data[i] = (unsigned char)(128 + (int)((char *)mData)[i]);
+    *dst ++ = ((unsigned char)(*src ++)) + 128;
 
   // Write data
-  f.write((const char *) data, imgSize);
-
-  // We're done with the temporary image buffer
-  delete[] data;
+  f.write((const char *) &data[0], imgSize);
 
   // Close output file
   f.close();
