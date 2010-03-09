@@ -29,7 +29,12 @@ namespace csg {
 
 void SampleSpace::DefineSpace(BoundingBox &aAABB, Vector3 aResolution)
 {
- // Determine nominal division
+  // Sanity check
+  if((aResolution.x < 1e-50) ||(aResolution.y < 1e-50) ||
+     (aResolution.z < 1e-50))
+    throw runtime_error("Invalid resolution.");
+
+  // Determine nominal division
   Vector3 d = aAABB.Diagonal();
   mDiv[0] = int(ceil(d.x / aResolution.x));
   mDiv[1] = int(ceil(d.y / aResolution.y));
