@@ -50,11 +50,11 @@ int main(int argc, char ** argv)
     cout << "Setting up CSG tree..." << flush;
     CSGDifference csg;
     CSGShape * node1 = (CSGShape *) csg.AddChild(new CSGShape());
-    SphereVoxelize * s1 = (SphereVoxelize *) node1->DefineShape(new SphereVoxelize());
-    s1->SetSphere(Vector3(-0.5, 0.0, 0.0), 2.0);
+    BoxVoxelize * s1 = (BoxVoxelize *) node1->DefineShape(new BoxVoxelize());
+    s1->SetBox(Vector3(0.0, 0.0, 0.0), Vector3(1.0, 1.0, 1.0));
     CSGShape * node2 = (CSGShape *) csg.AddChild(new CSGShape());
     SphereVoxelize * s2 = (SphereVoxelize *) node2->DefineShape(new SphereVoxelize());
-    s2->SetSphere(Vector3(0.5, 0.0, 0.3), 1.5);
+    s2->SetSphere(Vector3(0.0, 0.0, 0.0), 0.6);
     cout << "done!" << endl;
 
     // Set up a sample space
@@ -62,7 +62,7 @@ int main(int argc, char ** argv)
     SampleSpace space;
     BoundingBox sceneAABB;
     csg.GetBoundingBox(sceneAABB);
-    space.DefineSpace(sceneAABB, 0.02);
+    space.DefineSpace(sceneAABB, 0.01);
     csg.SetSampleSpace(&space);
     cout << "done!" << endl;
 
