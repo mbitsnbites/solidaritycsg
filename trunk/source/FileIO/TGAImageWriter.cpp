@@ -17,12 +17,36 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <cstring>
 #include <vector>
 #include "TGAImageWriter.h"
 
 using namespace std;
 
 namespace csg {
+
+// TGA header template definition (replace selected fields at run time)
+static const unsigned char gTGAHeaderTemplate[18] = {
+  0,  // ID length
+  0,  // Color map type (0 = none)
+  3,  // Image type (3 = gray)
+  0,  // First color map entry (16 bits)
+  0,  // -"-
+  0,  // Number of color map entries (16 bits)
+  0,  // -"-
+  0,  // Bits per color map entry
+  0,  // Image x origin (16 bits)
+  0,  // -"-
+  0,  // Image y origin (16 bits)
+  0,  // -"-
+  0,  // Image width (16 bits)
+  0,  // -"-
+  0,  // Image width (16 bits)
+  0,  // -"-
+  8,  // Bits per pixel
+  32  // Flip flag (bit 5: use top-to-bottom ordering)
+};
+
 
 //-----------------------------------------------------------------------------
 // TGAImageWriter
@@ -44,26 +68,13 @@ void TGAImageWriter::SaveToFile(const char * aFileName)
     throw runtime_error("Unable to write output file.");
 
   // Write header
-  unsigned char header[18];
-  header[0] = 0;  // ID length
-  header[1] = 0;  // Color map type (0 = none)
-  header[2] = 3;  // Image type (3 = gray)
-  header[3] = 0;  // First color map entry (16 bits)
-  header[4] = 0;  // -"-
-  header[5] = 0;  // Number of color map entries (16 bits)
-  header[6] = 0;  // -"-
-  header[7] = 0;  // Bits per color map entry
-  header[8] = 0;  // Image x origin (16 bits)
-  header[9] = 0;  // -"-
-  header[10] = 0;  // Image y origin (16 bits)
-  header[11] = 0;  // -"-
+  vector<unsigned char> header(18);
+  memcpy(&header[0], gTGAHeaderTemplate, 18);
   header[12] = mWidth & 255;         // Image width (16 bits)
   header[13] = (mWidth >> 8) & 255;  // -"-
   header[14] = mHeight & 255;        // Image width (16 bits)
   header[15] = (mHeight >> 8) & 255; // -"-
-  header[16] = 8;  // Bits per pixel
-  header[17] = 32; // Flip flag (bit 5: use top-to-bottom ordering)
-  f.write((const char *) header, 18);
+  f.write((const char *) &header[0], 18);
 
   // Convert the image to the output format
   int imgSize = mWidth * mHeight;
