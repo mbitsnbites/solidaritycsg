@@ -82,10 +82,15 @@ bool Triangle::IntersectPlane(double aPlaneZ, Vector3 * p1, Vector3 * p2)
   return true;
 }
 
-double Triangle::IntersectZRay(Vector3 aOrigin)
+double Triangle::IntersectZRay(Vector3 &aOrigin)
 {
   // Is the triangle parallel to the ray?
   if(fabs(mNormal.z) < 1e-50)
+    return -1.0;
+
+  // Is the ray origin above the triangle?
+  if((aOrigin.z > mVertices[0]->z) && (aOrigin.z > mVertices[1]->z) &&
+     (aOrigin.z > mVertices[2]->z))
     return -1.0;
 
   Vector3 w0 = aOrigin - *mVertices[0];
@@ -165,6 +170,28 @@ XYTreeNode::XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB)
   }
 }
 
+int XYTreeNode::IntersectCount(Vector3 &aOrigin)
+{
+  // Is the origin outside of the bounding rectangle?
+  if(!((aOrigin.x > mMin[0]) && (aOrigin.x < mMax[0]) &&
+       (aOrigin.y > mMin[1]) && (aOrigin.y < mMax[1])))
+    return 0;
+
+  Triangle * tri = LeafItem();
+  if(tri)
+  {
+    // Do we have a unique positive triangle intersection?
+    double t = tri->IntersectZRay(aOrigin);
+    return (t > 1e-50) ? 1 : 0;
+  }
+  else
+  {
+    // Calculate sums of the number of intersections in the child branches...
+    return ((XYTreeNode *) mPtr1)->IntersectCount(aOrigin) +
+           ((XYTreeNode *) mPtr2)->IntersectCount(aOrigin);
+  }
+}
+
 //-----------------------------------------------------------------------------
 // ZTreeNode
 //-----------------------------------------------------------------------------
@@ -203,6 +230,25 @@ ZTreeNode::ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB)
     mMaxZ = aChildB->mMaxZ;
 }
 
+void ZTreeNode::IntersectingTriangles(double aZ, list<Triangle *> &aList)
+{
+  // Is the plane outside of the bounding interval?
+  if((aZ < mMinZ) || (aZ > mMaxZ))
+    return;
+
+  Triangle * tri = LeafItem();
+  if(tri)
+  {
+    // Add this triangle to the list
+    aList.push_back(tri);
+  }
+  else
+  {
+    // Continue to recurse into the child branches
+    ((ZTreeNode *) mPtr1)->IntersectingTriangles(aZ, aList);
+    ((ZTreeNode *) mPtr2)->IntersectingTriangles(aZ, aList);
+  }
+}
 
 //-----------------------------------------------------------------------------
 // MeshVoxelize
@@ -247,7 +293,65 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   if(!mSampleSpace || !mSampleSpace->IsValid())
     throw runtime_error("Undefined/invalid voxel space dimensions.");
 
-  // FIXME!
+  // Check that the mesh has been properly set up
+  if(!mRectTree || !mHeightTree)
+    throw runtime_error("Undefined triangle mesh.");
+
+  // Calculate the slice plane Z value
+  Vector3 voxelSize = mSampleSpace->VoxelSize();
+  double planeZ = aZ * voxelSize.z + mSampleSpace->mAABB.mMin.z;
+
+  // Start by marking all voxels of the slice as "UNVISITED"
+  Voxel * ptr = aSlice;
+  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
+    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+      *ptr ++ = VOXEL_UNVISITED;
+
+  // Get all intersecting triangles
+  list<Triangle *> triList;
+  mHeightTree->IntersectingTriangles(planeZ, triList);
+
+  // Calculate and draw all intersections to the slice
+  for(list<Triangle *>::iterator t = triList.begin(); t != triList.end(); ++ t)
+  {
+    Vector3 p1, p2;
+    if((*t)->IntersectPlane(planeZ, &p1, &p2))
+      DrawLineSegment(aSlice, p1, p2);
+  }
+
+  // Flood fill the rest of the slice according to in/out
+  ptr = aSlice;
+  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
+  {
+    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+    {
+      if(*ptr == VOXEL_UNVISITED)
+      {
+        // Calculate voxel 3D coordinate
+        Vector3 p;
+        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
+        p.z = planeZ;
+
+        // Check if the voxel is inside or outside of the triangle mesh
+        Voxel value = mRectTree->PointInside(p) ? VOXEL_MAX : -VOXEL_MAX;
+
+        // Flood fill from this voxel
+        FloodFill(aSlice, x, y, value);
+      }
+    }
+    ptr ++;
+  }
+}
+
+void MeshVoxelize::DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2)
+{
+  // FIXME
+}
+
+void MeshVoxelize::FloodFill(Voxel * aSlice, int x, int y, Voxel aValue)
+{
+  // FIXME
 }
 
 }

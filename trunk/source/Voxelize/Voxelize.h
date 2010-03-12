@@ -29,6 +29,9 @@ typedef signed char Voxel;
 /// Maximum voxel value
 #define VOXEL_MAX 127
 
+/// Reserved voxel value for "UNVISITED"
+#define VOXEL_UNVISITED -128
+
 /// Voxel sampler space definition class.
 class SampleSpace {
   public:
