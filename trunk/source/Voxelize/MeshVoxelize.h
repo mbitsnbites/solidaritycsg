@@ -186,7 +186,7 @@ class MeshVoxelize : public Voxelize {
     void DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2);
 
     /// Flood fill unvisited elements of the slice.
-    void FloodFill(Voxel * aSlice, int x, int y, Voxel aValue);
+    void FloodFill(Voxel * aSlice, int aX, int aY, Voxel aValue);
 
     /// Triangles.
     std::vector<Triangle> mTriangles;
