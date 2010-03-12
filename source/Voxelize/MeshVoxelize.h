@@ -20,6 +20,7 @@
 
 #include "Voxelize.h"
 #include <vector>
+#include <list>
 
 namespace csg {
 
@@ -40,7 +41,7 @@ class Triangle {
     /// The result of the intersection is the t-value (offset) along the ray for
     /// the intersection. A negative return value indicates that there was no
     /// intersection.
-    double IntersectZRay(Vector3 aOrigin);
+    double IntersectZRay(Vector3 &aOrigin);
 
   private:
     Vector3 * mVertices[3]; ///< Pointers to the actual vertex coordinates.
@@ -117,13 +118,18 @@ class XYTreeNode : public TreeNode {
     /// Constructor for parent nodes.
     XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB);
 
+    /// Check if a point is inside or outside of the triangle volume. Note
+    /// that this method only makes sense for the root node of the tree.
     inline bool PointInside(Vector3 &aPoint)
     {
-      return ((aPoint.x > mMin[0]) && (aPoint.x < mMax[0]) &&
-              (aPoint.y > mMin[1]) && (aPoint.y < mMax[1]));
+      return (IntersectCount(aPoint) & 1) ? false : true;
     }
 
   private:
+    /// Calculate number of intersections with a positive Z ray starting at
+    /// aPoint.
+    int IntersectCount(Vector3 &aOrigin);
+
     double mMin[2]; ///< Lower bound
     double mMax[2]; ///< Upper bound
 };
@@ -137,10 +143,8 @@ class ZTreeNode : public TreeNode {
     /// Constructor for parent nodes.
     ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB);
 
-    inline bool PointInside(Vector3 &aPoint)
-    {
-      return ((aPoint.z > mMinZ) && (aPoint.z < mMaxZ));
-    }
+    /// Generate a list of all triangles that intersect the given XY plane.
+    void IntersectingTriangles(double aZ, std::list<Triangle *> &aList);
 
   private:
     double mMinZ;   ///< Lower bound
@@ -178,6 +182,12 @@ class MeshVoxelize : public Voxelize {
     virtual void CalculateSlice(Voxel * aSlice, int aZ);
 
   private:
+    /// Draw a single line segment (triangle/plane intersection) to the slice.
+    void DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2);
+
+    /// Flood fill unvisited elements of the slice.
+    void FloodFill(Voxel * aSlice, int x, int y, Voxel aValue);
+
     /// Triangles.
     std::vector<Triangle> mTriangles;
 
