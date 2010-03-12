@@ -24,6 +24,10 @@
 
 namespace csg {
 
+// Forward declarations
+class Mesh;
+
+
 /// Triangle class.
 class Triangle {
   public:
@@ -179,7 +183,13 @@ class MeshVoxelize : public Voxelize {
     /// object, so the data arrays (aIndices, aVertices) can be free:d once this
     /// function has been called.
     void SetTriangles(int aTriangleCount, int * aIndices, int aVertexCount,
-                      float * aVertices);
+                      double * aVertices);
+
+    /// Define the triangle surface to be voxelized.
+    /// A copy of the triangle surface is made internally in the Voxelize
+    /// object, so the mesh object can be free:d once this function has been
+    /// called.
+    void SetTriangles(Mesh &aMesh);
 
     /// Calculate a single slice of the voxel volume.
     /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
