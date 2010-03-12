@@ -257,12 +257,33 @@ void ZTreeNode::IntersectingTriangles(double aZ, list<Triangle *> &aList)
 void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
   int aVertexCount, float * aVertices)
 {
-  // Create vertex array
+  // Sanity check
+  if((aTriangleCount < 4) || (!aIndices) || (aVertexCount < 4) || (!aVertices))
+    throw runtime_error("Invalid mesh definition.");
+
+  // Create vertex array, and calculate the shape bounding box
   mVertices.resize(aVertexCount);
   float * vPtr = aVertices;
+  mAABB.mMin = mAABB.mMax = Vector3(vPtr[0], vPtr[1], vPtr[2]);
   for(int i = 0; i < aVertexCount; ++ i)
   {
+    // Copy vertex coordinates
     mVertices[i] = Vector3(vPtr[0], vPtr[1], vPtr[2]);
+
+    // Update bounding box min/max
+    if(mVertices[i].x < mAABB.mMin.x)
+      mAABB.mMin.x = mVertices[i].x;
+    else if(mVertices[i].x > mAABB.mMax.x)
+      mAABB.mMax.x = mVertices[i].x;
+    if(mVertices[i].y < mAABB.mMin.y)
+      mAABB.mMin.y = mVertices[i].y;
+    else if(mVertices[i].y > mAABB.mMax.y)
+      mAABB.mMax.y = mVertices[i].y;
+    if(mVertices[i].z < mAABB.mMin.z)
+      mAABB.mMin.z = mVertices[i].z;
+    else if(mVertices[i].z > mAABB.mMax.z)
+      mAABB.mMax.z = mVertices[i].z;
+
     vPtr += 3;
   }
 
@@ -282,9 +303,6 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
 
   // Build 1D bounding interval tree (Z)
   // FIXME!
-
-  // Update the shape bounding box
-  // FIXME
 }
 
 void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
