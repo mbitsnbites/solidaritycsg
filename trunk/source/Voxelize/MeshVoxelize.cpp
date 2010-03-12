@@ -555,8 +555,9 @@ void MeshVoxelize::FloodFill(Voxel * aSlice, int aX, int aY, Voxel aValue)
 
   // Get index limits for this slice
   int xCount = mSampleSpace->mDiv[0];
+  int yCount = mSampleSpace->mDiv[1];
   int xMax = xCount - 1;
-  int idxMax = mSampleSpace->mDiv[0] * (mSampleSpace->mDiv[1] - 1);
+  int sliceSize = xCount * yCount;
 
   // Initialize the fill queue with the starting point
   list<int> queue;
@@ -569,24 +570,43 @@ void MeshVoxelize::FloodFill(Voxel * aSlice, int aX, int aY, Voxel aValue)
     int idx = queue.front();
     queue.pop_front();
 
-    // Is this voxel unvisited?
-    if(aSlice[idx] == VOXEL_UNVISITED)
+    // Convert 1D index to the corresponding x coordinate
+    int x = idx % xCount;
+
+    // Find first non-filled voxel along this column
+    while((idx >= 0) && (aSlice[idx] == VOXEL_UNVISITED))
+      idx -= xCount;
+    idx += xCount;
+
+    // Fill this column as far as its unvisited
+    bool spanLeft = false;
+    bool spanRight = false;
+    while((idx < sliceSize) && (aSlice[idx] == VOXEL_UNVISITED))
     {
       // Set fill value
       aSlice[idx] = aValue;
 
-      // Convert 1D index to the corresponding x coordinate
-      int x = idx % xCount;
-
       // Append neighbours to the fill queue
-      if(x < xMax)
-        queue.push_back(idx + 1);
-      if(x > 0)
+      if((!spanLeft) && (x > 0) && (aSlice[idx - 1] == VOXEL_UNVISITED))
+      {
         queue.push_back(idx - 1);
-      if(idx < idxMax)
-        queue.push_back(idx + xCount);
-      if(idx >= xCount)
-        queue.push_back(idx - xCount);
+        spanLeft = true;
+      }
+      else if(spanLeft && (x > 0) && (aSlice[idx - 1] != VOXEL_UNVISITED))
+      {
+        spanLeft = false;
+      }
+      if((!spanRight) && (x < xMax) && (aSlice[idx + 1] == VOXEL_UNVISITED))
+      {
+        queue.push_back(idx + 1);
+        spanRight = true;
+      }
+      else if(spanRight && (x < xMax) && (aSlice[idx + 1] != VOXEL_UNVISITED))
+      {
+        spanRight = false;
+      }
+
+      idx += xCount;
     }
   }
 }
