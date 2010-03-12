@@ -16,6 +16,7 @@
 */
 
 #include "MeshVoxelize.h"
+#include "../FileIO/Mesh.h"
 #include <stdexcept>
 
 using namespace std;
@@ -254,8 +255,14 @@ void ZTreeNode::IntersectingTriangles(double aZ, list<Triangle *> &aList)
 // MeshVoxelize
 //-----------------------------------------------------------------------------
 
+void MeshVoxelize::SetTriangles(Mesh &aMesh)
+{
+  SetTriangles(int(aMesh.mIndices.size() / 3), &aMesh.mIndices[0],
+               int(aMesh.mVertices.size()), &aMesh.mVertices[0].x);
+}
+
 void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
-  int aVertexCount, float * aVertices)
+  int aVertexCount, double * aVertices)
 {
   // Sanity check
   if((aTriangleCount < 4) || (!aIndices) || (aVertexCount < 4) || (!aVertices))
@@ -263,7 +270,7 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
 
   // Create vertex array, and calculate the shape bounding box
   mVertices.resize(aVertexCount);
-  float * vPtr = aVertices;
+  double * vPtr = aVertices;
   mAABB.mMin = mAABB.mMax = Vector3(vPtr[0], vPtr[1], vPtr[2]);
   for(int i = 0; i < aVertexCount; ++ i)
   {
@@ -410,7 +417,7 @@ XYTreeNode * MeshVoxelize::BuildRectangleTree(vector<XYTreeNode *> &aNodes)
     {
       if(aNodes[i]->mMin[j] < min[j])
         min[j] = aNodes[i]->mMin[j];
-      else if(aNodes[i]->mMax[j] > max[j])
+      if(aNodes[i]->mMax[j] > max[j])
         max[j] = aNodes[i]->mMax[j];
     }
   }
@@ -481,7 +488,7 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes)
   {
     if(aNodes[i]->mMinZ < minZ)
       minZ = aNodes[i]->mMinZ;
-    else if(aNodes[i]->mMaxZ > maxZ)
+    if(aNodes[i]->mMaxZ > maxZ)
       maxZ = aNodes[i]->mMaxZ;
   }
 
