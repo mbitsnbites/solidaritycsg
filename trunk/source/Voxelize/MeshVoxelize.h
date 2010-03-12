@@ -55,6 +55,7 @@ class Triangle {
     friend class ZTreeNode;
 };
 
+
 /// Generic binary tree node class.
 class TreeNode {
   public:
@@ -71,10 +72,6 @@ class TreeNode {
       {
         delete (TreeNode *) mPtr1;
         delete (TreeNode *) mPtr2;
-      }
-      else if(mPtr1)
-      {
-        delete (Triangle *) mPtr1;
       }
     }
 
