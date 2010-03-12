@@ -337,7 +337,7 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
       DrawLineSegment(aSlice, p1, p2);
   }
 
-  // Flood fill the rest of the slice according to in/out
+  // Flood fill the unvisited parts of the slice according to in/out
   ptr = aSlice;
   for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
   {
@@ -367,9 +367,54 @@ void MeshVoxelize::DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2)
   // FIXME
 }
 
-void MeshVoxelize::FloodFill(Voxel * aSlice, int x, int y, Voxel aValue)
+/// Slice coordinate class. This class is used by the FloodFill method.
+class SliceCoord {
+  public:
+    SliceCoord(int aX, int aY)
+    {
+      x = aX;
+      y = aY;
+    }
+
+    int x, y;
+};
+
+void MeshVoxelize::FloodFill(Voxel * aSlice, int aX, int aY, Voxel aValue)
 {
-  // FIXME
+  // Sanity check
+  if((aValue == VOXEL_UNVISITED) || (aX < 0) || (aX >= mSampleSpace->mDiv[0]) ||
+     (aY < 0) || (aY >= mSampleSpace->mDiv[1]))
+    throw runtime_error("Invalid fill operation.");
+
+  // Initialize the fill queue with the starting point
+  list<SliceCoord> queue;
+  queue.push_back(SliceCoord(aX, aY));
+
+  // Flood...
+  while(!queue.empty())
+  {
+    // Get next voxel to evaluate
+    SliceCoord c = queue.front();
+    queue.pop_front();
+
+    // Is this voxel unvisited?
+    int idx = c.y * mSampleSpace->mDiv[0] + c.x;
+    if(aSlice[idx] == VOXEL_UNVISITED)
+    {
+      // Set fill value
+      aSlice[idx] = aValue;
+
+      // Append neighbours to the fill queue
+      if(c.x < (mSampleSpace->mDiv[0] - 1))
+        queue.push_back(SliceCoord(c.x + 1, c.y));
+      if(c.x > 0)
+        queue.push_back(SliceCoord(c.x - 1, c.y));
+      if(c.y < (mSampleSpace->mDiv[1] - 1))
+        queue.push_back(SliceCoord(c.x, c.y + 1));
+      if(c.y > 0)
+        queue.push_back(SliceCoord(c.x, c.y - 1));
+    }
+  }
 }
 
 }
