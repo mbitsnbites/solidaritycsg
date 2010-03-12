@@ -298,11 +298,41 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
     iPtr += 3;
   }
 
-  // Build 2D bounding rectangle tree (XY)
-  // FIXME!
+  // Build the 2D bounding rectangle tree (XY)
+  vector<XYTreeNode *> rectLeafNodes(mTriangles.size(), 0);
+  try
+  {
+    for(unsigned int i = 0; i < mTriangles.size(); ++ i)
+      rectLeafNodes[i] = new XYTreeNode(&mTriangles[i]);
+    mRectTree = BuildRectangleTree(rectLeafNodes);
+  }
+  catch(...)
+  {
+    // If something went wrong, free all the leaf nodes
+    for(unsigned int i = 0; i < rectLeafNodes.size(); ++ i)
+      if(rectLeafNodes[i])
+        delete rectLeafNodes[i];
+    throw;
+  }
+  rectLeafNodes.clear();
 
-  // Build 1D bounding interval tree (Z)
-  // FIXME!
+  // Build the 1D bounding interval tree (Z)
+  vector<ZTreeNode *> heightLeafNodes(mTriangles.size(), 0);
+  try
+  {
+    for(unsigned int i = 0; i < mTriangles.size(); ++ i)
+      heightLeafNodes[i] = new ZTreeNode(&mTriangles[i]);
+    mHeightTree = BuildHeightTree(heightLeafNodes);
+  }
+  catch(...)
+  {
+    // If something went wrong, free all the leaf nodes
+    for(unsigned int i = 0; i < heightLeafNodes.size(); ++ i)
+      if(heightLeafNodes[i])
+        delete heightLeafNodes[i];
+    throw;
+  }
+  heightLeafNodes.clear();
 }
 
 void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
@@ -360,6 +390,148 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
     }
     ptr ++;
   }
+}
+
+XYTreeNode * MeshVoxelize::BuildRectangleTree(vector<XYTreeNode *> &aNodes)
+{
+  // Leaf node?
+  if(aNodes.size() == 1)
+    return aNodes[0];
+
+  // Calculate the combined bounding rectangle for all the nodes in the array
+  double min[2], max[2];
+  min[0] = aNodes[0]->mMin[0];
+  min[1] = aNodes[0]->mMin[1];
+  max[0] = aNodes[0]->mMax[0];
+  max[1] = aNodes[0]->mMax[1];
+  for(unsigned int i = 1; i < aNodes.size(); ++ i)
+  {
+    for(int j = 0; j < 2; ++ j)
+    {
+      if(aNodes[i]->mMin[j] < min[j])
+        min[j] = aNodes[i]->mMin[j];
+      else if(aNodes[i]->mMax[j] > max[j])
+        max[j] = aNodes[i]->mMax[j];
+    }
+  }
+
+  // Optimal split axis (split along X or along Y?)
+  int axis = ((max[1] - min[1]) > (max[0] - min[0])) ? 1 : 0;
+
+  // Partition the nodes array into the A and B branches of the new node
+  vector<XYTreeNode *> childANodes(aNodes.size());
+  vector<XYTreeNode *> childBNodes(aNodes.size());
+  double mid2 = min[axis] + max[axis];
+  int countA = 0;
+  int countB = 0;
+  for(unsigned int i = 0; i < aNodes.size(); ++ i)
+  {
+    if((aNodes[i]->mMin[axis] + aNodes[i]->mMax[axis]) < mid2)
+    {
+      childANodes[countA] = aNodes[i];
+      ++ countA;
+    }
+    else
+    {
+      childANodes[countB] = aNodes[i];
+      ++ countB;
+    }
+  }
+
+  // If we had a degenerate case, move one node from the full branch to the
+  // empty branch
+  if(countA == 0)
+  {
+    childANodes[0] = childBNodes[countB - 1];
+    ++ countA;
+    -- countB;
+  }
+  else if(countB == 0)
+  {
+    childBNodes[0] = childANodes[countA - 1];
+    -- countA;
+    ++ countB;
+  }
+
+  // Adjust the sizes of the arrays
+  childANodes.resize(countA);
+  childBNodes.resize(countB);
+
+  // Recursively build the child branches
+  XYTreeNode * childA = BuildRectangleTree(childANodes);
+  childANodes.clear();
+  XYTreeNode * childB = BuildRectangleTree(childBNodes);
+  childBNodes.clear();
+
+  // Create a new node, based on the A & B children
+  return new XYTreeNode(childA, childB);
+}
+
+ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes)
+{
+  // Leaf node?
+  if(aNodes.size() == 1)
+    return aNodes[0];
+
+  // Calculate the combined bounding interval for all the nodes in the array
+  double minZ, maxZ;
+  minZ = aNodes[0]->mMinZ;
+  maxZ = aNodes[0]->mMaxZ;
+  for(unsigned int i = 1; i < aNodes.size(); ++ i)
+  {
+    if(aNodes[i]->mMinZ < minZ)
+      minZ = aNodes[i]->mMinZ;
+    else if(aNodes[i]->mMaxZ > maxZ)
+      maxZ = aNodes[i]->mMaxZ;
+  }
+
+  // Partition the nodes array into the A and B branches of the new node
+  vector<ZTreeNode *> childANodes(aNodes.size());
+  vector<ZTreeNode *> childBNodes(aNodes.size());
+  double mid2 = minZ + maxZ;
+  int countA = 0;
+  int countB = 0;
+  for(unsigned int i = 0; i < aNodes.size(); ++ i)
+  {
+    if((aNodes[i]->mMinZ + aNodes[i]->mMaxZ) < mid2)
+    {
+      childANodes[countA] = aNodes[i];
+      ++ countA;
+    }
+    else
+    {
+      childANodes[countB] = aNodes[i];
+      ++ countB;
+    }
+  }
+
+  // If we had a degenerate case, move one node from the full branch to the
+  // empty branch
+  if(countA == 0)
+  {
+    childANodes[0] = childBNodes[countB - 1];
+    ++ countA;
+    -- countB;
+  }
+  else if(countB == 0)
+  {
+    childBNodes[0] = childANodes[countA - 1];
+    -- countA;
+    ++ countB;
+  }
+
+  // Adjust the sizes of the arrays
+  childANodes.resize(countA);
+  childBNodes.resize(countB);
+
+  // Recursively build the child branches
+  ZTreeNode * childA = BuildHeightTree(childANodes);
+  childANodes.clear();
+  ZTreeNode * childB = BuildHeightTree(childBNodes);
+  childBNodes.clear();
+
+  // Create a new node, based on the A & B children
+  return new ZTreeNode(childA, childB);
 }
 
 void MeshVoxelize::DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2)

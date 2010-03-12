@@ -132,6 +132,8 @@ class XYTreeNode : public TreeNode {
 
     double mMin[2]; ///< Lower bound
     double mMax[2]; ///< Upper bound
+
+    friend class MeshVoxelize;
 };
 
 /// Bounding interval tree node class.
@@ -149,6 +151,8 @@ class ZTreeNode : public TreeNode {
   private:
     double mMinZ;   ///< Lower bound
     double mMaxZ;   ///< Upper bound
+
+    friend class MeshVoxelize;
 };
 
 /// Voxelize class for mesh objects.
@@ -182,6 +186,12 @@ class MeshVoxelize : public Voxelize {
     virtual void CalculateSlice(Voxel * aSlice, int aZ);
 
   private:
+    /// Build the 2D bounding rectangle tree (XY).
+    XYTreeNode * BuildRectangleTree(std::vector<XYTreeNode *> &aNodes);
+
+    /// Build the 1D bounding interval tree (Z).
+    ZTreeNode * BuildHeightTree(std::vector<ZTreeNode *> &aNodes);
+
     /// Draw a single line segment (triangle/plane intersection) to the slice.
     void DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2);
 
