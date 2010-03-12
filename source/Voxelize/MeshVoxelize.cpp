@@ -297,7 +297,7 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
   // Create triangle array
   mTriangles.resize(aTriangleCount);
   int * iPtr = aIndices;
-  for(int i = 0; i < aVertexCount; ++ i)
+  for(int i = 0; i < aTriangleCount; ++ i)
   {
     mTriangles[i].SetCoordinates(&mVertices[iPtr[0]],
                                  &mVertices[iPtr[1]],
@@ -440,7 +440,7 @@ XYTreeNode * MeshVoxelize::BuildRectangleTree(vector<XYTreeNode *> &aNodes)
     }
     else
     {
-      childANodes[countB] = aNodes[i];
+      childBNodes[countB] = aNodes[i];
       ++ countB;
     }
   }
@@ -507,7 +507,7 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes)
     }
     else
     {
-      childANodes[countB] = aNodes[i];
+      childBNodes[countB] = aNodes[i];
       ++ countB;
     }
   }
