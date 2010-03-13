@@ -43,9 +43,9 @@ void Triangle::SetCoordinates(Vector3 * p1, Vector3 * p2, Vector3 * p3)
 bool Triangle::IntersectPlane(double aPlaneZ, Vector3 * p1, Vector3 * p2)
 {
   double d[3], s;
-  d[0] = mVertices[0]->z - aPlaneZ;
-  d[1] = mVertices[1]->z - aPlaneZ;
-  d[2] = mVertices[2]->z - aPlaneZ;
+  d[0] = aPlaneZ - mVertices[0]->z;
+  d[1] = aPlaneZ - mVertices[1]->z;
+  d[2] = aPlaneZ - mVertices[2]->z;
 
   if((d[0] * d[1]) < 0.0)
   {
@@ -174,8 +174,8 @@ XYTreeNode::XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB)
 int XYTreeNode::IntersectCount(Vector3 &aOrigin)
 {
   // Is the origin outside of the bounding rectangle?
-  if(!((aOrigin.x > mMin[0]) && (aOrigin.x < mMax[0]) &&
-       (aOrigin.y > mMin[1]) && (aOrigin.y < mMax[1])))
+  if(((aOrigin.x < mMin[0]) || (aOrigin.x > mMax[0]) ||
+      (aOrigin.y < mMin[1]) || (aOrigin.y > mMax[1])))
     return 0;
 
   Triangle * tri = LeafItem();
