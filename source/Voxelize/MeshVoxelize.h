@@ -123,7 +123,7 @@ class XYTreeNode : public TreeNode {
     /// that this method only makes sense for the root node of the tree.
     inline bool PointInside(Vector3 &aPoint)
     {
-      return (IntersectCount(aPoint) & 1) ? false : true;
+      return (IntersectCount(aPoint) & 1) ? true : false;
     }
 
   private:
