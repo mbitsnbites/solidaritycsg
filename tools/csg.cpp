@@ -15,6 +15,7 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdexcept>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -26,6 +27,24 @@
 using namespace csg;
 using namespace std;
 
+
+/// CSG job class.
+class CSGJob {
+  public:
+    /// Load the settings description from an XML document node.
+    void LoadSettings(TiXmlNode * aNode)
+    {
+      cout << " Reading settings..." << endl;
+      // FIXME
+    }
+
+    /// Load the volume description from an XML document node.
+    void LoadVolume(TiXmlNode * aNode)
+    {
+      cout << " Reading volume description..." << endl;
+      // FIXME
+    }
+};
 
 
 /// Main application entry
@@ -41,9 +60,45 @@ int main(int argc, char ** argv)
 
   try
   {
+    CSGJob job;
+
     // Load input XML
     cout << "Loading job description " << inFile << "..." << endl;
+    TiXmlDocument xmlDoc;
+    if(!xmlDoc.LoadFile(inFile))
+      throw runtime_error(xmlDoc.ErrorDesc());
+
+    // Parse XML document
+    TiXmlElement * root = xmlDoc.RootElement();
+    if(!root || (root->Type() != TiXmlNode::ELEMENT) ||
+       (root->Value() != string("csg")))
+      throw runtime_error("Could not find root element (\"csg\").");
+    TiXmlNode * node = root->FirstChild();
+    while(node)
+    {
+      if(node->Type() == TiXmlNode::ELEMENT)
+      {
+        // Settings node?
+        if(node->Value() == string("settings"))
+          job.LoadSettings(node);
+
+        // Volume description node?
+        else if(node->Value() == string("volume"))
+          job.LoadVolume(node);
+
+        // Unrecognized node?
+        else
+          cout << " Warning: Unrecognized node: " << node->Value() << endl;
+      }
+
+      // Next node...
+      node = node->NextSibling();
+    }
+
+    // Perform operation...
+    cout << "Executing job" << inFile << "..." << flush;
     // FIXME
+    cout << "done!" << endl;
   }
   catch(exception &e)
   {
