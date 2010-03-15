@@ -374,6 +374,29 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
       DrawLineSegment(aSlice, p1, p2);
   }
 
+  // Determine in/out for all the visited voxels
+  ptr = aSlice;
+  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
+  {
+    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+    {
+      Voxel value = *ptr;
+      if(value != VOXEL_UNVISITED)
+      {
+        // Calculate voxel 3D coordinate
+        Vector3 p;
+        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
+        p.z = planeZ;
+
+        // Point outside? If so, flip sign...
+        if(!mRectTree->PointInside(p))
+          *ptr = -value;
+      }
+      ++ ptr;
+    }
+  }
+
   // Flood fill the unvisited parts of the slice according to in/out
   ptr = aSlice;
   for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
@@ -394,8 +417,8 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
         // Flood fill from this voxel
         FloodFill(aSlice, x, y, value);
       }
+      ++ ptr;
     }
-    ptr ++;
   }
 }
 
@@ -541,9 +564,181 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes)
   return new ZTreeNode(childA, childB);
 }
 
+/// Helper funciton for updating the voxel values (used by DrawLineSegment).
+static void UpdateVoxelValues(Voxel * aSlice, int aSliceSize, int aIdx1,
+  int aIdx2, double &aDist1)
+{
+  if((aIdx1 >= 0) && (aIdx1 < aSliceSize))
+  {
+    Voxel v1 = (Voxel) (aDist1 * VOXEL_MAX + 0.5);
+    if((aSlice[aIdx1] == VOXEL_UNVISITED) || (v1 < aSlice[aIdx1]))
+      aSlice[aIdx1] = v1;
+  }
+  if((aIdx2 >= 0) && (aIdx2 < aSliceSize))
+  {
+    Voxel v2 = (Voxel) ((1.0 - aDist1) * VOXEL_MAX + 0.5);
+    if((aSlice[aIdx2] == VOXEL_UNVISITED) || (v2 < aSlice[aIdx2]))
+      aSlice[aIdx2] = v2;
+  }
+}
+
 void MeshVoxelize::DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2)
 {
-  // FIXME
+  // Convert the coordinates from world space to voxel index space
+  double scaleX = mSampleSpace->mDiv[0] / (mSampleSpace->mAABB.mMax.x - mSampleSpace->mAABB.mMin.x);
+  double scaleY = mSampleSpace->mDiv[1] / (mSampleSpace->mAABB.mMax.y - mSampleSpace->mAABB.mMin.y);
+  double x1 = (p1.x - mSampleSpace->mAABB.mMin.x) * scaleX;
+  double y1 = (p1.y - mSampleSpace->mAABB.mMin.y) * scaleY;
+  double x2 = (p2.x - mSampleSpace->mAABB.mMin.x) * scaleX;
+  double y2 = (p2.y - mSampleSpace->mAABB.mMin.y) * scaleY;
+
+  int sliceSize = mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1];
+
+  // Calculate direction, and determine major axis
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+  if(fabs(dx) > fabs(dy))
+  {
+    // Make sure that the step along the major axis is positive
+    if(dx < 0.0)
+    {
+      double tmp = x1;
+      x1 = x2;
+      x2 = tmp;
+      tmp = y1;
+      y1 = y2;
+      y2 = tmp;
+      dx = -dx;
+      dy = -dy;
+    }
+
+    // Step length along minor axis (when major axis step length = 1.0)
+    dy /= dx;
+    double dyInv = 1.0 / dy;
+
+    // Calculate starting point (first intersection along the minor axis)
+    double x, y, fracX;
+    fracX = modf(x1, &x);
+    if(fracX < 0.0)
+      fracX += 1.0;
+    else
+      x += 1.0;
+    y = y1 + (1.0 - fracX) * dy;
+
+    // Loop and process all edge crossings
+    int yIntOld = int(floor(y1));
+    int xInt = int(floor(x));
+    int numMajorCrossings = int(ceil(x2)) - xInt + 1;
+    for(int i = 0; i < numMajorCrossings; ++ i)
+    {
+      // Get integer voxel coordinates, and check if we are within bounds
+      int yInt = int(floor(y));
+      if((xInt >= 0) && (xInt < mSampleSpace->mDiv[0]) &&
+         (yInt >= 0) && (yInt < mSampleSpace->mDiv[1]))
+      {
+        int idx1 = yInt * mSampleSpace->mDiv[0] + xInt;
+
+        // Did we have a crossing along the minor axis?
+        if(yInt != yIntOld)
+        {
+          // Calculate the crossing along the major axis
+          double d;
+          if(dy > 0.0)
+          {
+            d = (y - double(yInt)) * dyInv;
+            UpdateVoxelValues(aSlice, sliceSize, idx1, idx1 - 1, d);
+          }
+          else
+          {
+            d = (y - double(yIntOld)) * dyInv;
+            UpdateVoxelValues(aSlice, sliceSize, idx1 + mSampleSpace->mDiv[0], idx1 + mSampleSpace->mDiv[0] - 1, d);
+          }
+        }
+
+        // Calculate the crossing along the minor axis (one per step)
+        double d = y - double(yInt);
+
+        // Update the voxel values
+        UpdateVoxelValues(aSlice, sliceSize, idx1, idx1 + mSampleSpace->mDiv[0], d);
+      }
+
+      // Next crossing along the major axis
+      yIntOld = yInt;
+      y += dy;
+      ++ xInt;
+    }
+  }
+  else // if(false)
+  {
+    // Make sure that the step along the major axis is positive
+    if(dy < 0.0)
+    {
+      double tmp = x1;
+      x1 = x2;
+      x2 = tmp;
+      tmp = y1;
+      y1 = y2;
+      y2 = tmp;
+      dx = -dx;
+      dy = -dy;
+    }
+
+    // Step length along minor axis (when major axis step length = 1.0)
+    dx /= dy;
+    double dxInv = 1.0 / dx;
+
+    // Calculate starting point (first intersection along the minor axis)
+    double x, y, fracY;
+    fracY = modf(y1, &y);
+    if(fracY < 0.0)
+      fracY += 1.0;
+    else
+      y += 1.0;
+    x = x1 + (1.0 - fracY) * dx;
+
+    // Loop and process all edge crossings
+    int xIntOld = int(floor(x1));
+    int yInt = int(floor(y));
+    int numMajorCrossings = int(ceil(y2)) - yInt + 1;
+    for(int i = 0; i < numMajorCrossings; ++ i)
+    {
+      // Get integer voxel coordinates, and check if we are within bounds
+      int xInt = int(floor(x));
+      if((xInt >= 0) && (xInt < mSampleSpace->mDiv[0]) &&
+         (yInt >= 0) && (yInt < mSampleSpace->mDiv[1]))
+      {
+        int idx1 = yInt * mSampleSpace->mDiv[0] + xInt;
+
+        // Did we have a crossing along the minor axis?
+        if(xInt != xIntOld)
+        {
+          // Calculate the crossing along the major axis
+          double d;
+          if(dx > 0.0)
+          {
+            d = (x - double(xInt)) * dxInv;
+            UpdateVoxelValues(aSlice, sliceSize, idx1, idx1 - mSampleSpace->mDiv[0], d);
+          }
+          else
+          {
+            d = (x - double(xIntOld)) * dxInv;
+            UpdateVoxelValues(aSlice, sliceSize, idx1 + 1, idx1 + 1 - mSampleSpace->mDiv[0], d);
+          }
+        }
+
+        // Calculate the crossing along the minor axis (one per step)
+        double d = x - double(xInt);
+
+        // Update the voxel values
+        UpdateVoxelValues(aSlice, sliceSize, idx1, idx1 + 1, d);
+      }
+
+      // Next crossing along the major axis
+      xIntOld = xInt;
+      x += dx;
+      ++ yInt;
+    }
+  }
 }
 
 void MeshVoxelize::FloodFill(Voxel * aSlice, int aX, int aY, Voxel aValue)
