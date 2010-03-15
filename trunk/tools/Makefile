@@ -15,22 +15,48 @@
 # along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------------------
 
+# Main program compiler settings
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c -I../source
+CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML
 LFLAGS = -L../source -s
 LIBS = -lsolidaritycsg
-RM = del /Q
+
+# TinyXML compiler settings
+TINYCPPFLAGS = -O2 -W -c -I./TinyXML
+
+# Misc. system commands
+#RM = del /Q
+RM = rm -f
 
 # For Windows - set this to .exe, otherwise leave it empty
-EXE = .exe
+#EXE = .exe
+EXE =
 
-all: demo$(EXE)
+# CSG program object files
+CSGOBJS = csg.o
+
+# Demo program object files
+DEMOOBJS = demo.o
+
+# TinyXML object files
+TINYXMLOBJS = tinyxml.o \
+              tinyxmlerror.o \
+              tinyxmlparser.o \
+              tinystr.o
+
+all: csg$(EXE) demo$(EXE)
 
 clean:
-	$(RM) demo.o demo$(EXE)
+	$(RM) $(CSGOBJS) $(DEMOOBJS) $(TINYXMLOBJS) csg$(EXE) demo$(EXE)
 
-demo$(EXE): demo.o
+csg$(EXE): $(CSGOBJS) $(TINYXMLOBJS)
+	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
+
+demo$(EXE): $(DEMOOBJS)
 	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $<
+
+%.o: TinyXML/%.cpp
+	$(CPP) $(TINYCPPFLAGS) $<
