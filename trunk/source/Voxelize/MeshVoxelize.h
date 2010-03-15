@@ -194,10 +194,10 @@ class MeshVoxelize : public Voxelize {
 
   private:
     /// Build the 2D bounding rectangle tree (XY).
-    XYTreeNode * BuildRectangleTree(std::vector<XYTreeNode *> &aNodes);
+    XYTreeNode * BuildRectangleTree(std::vector<XYTreeNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
 
     /// Build the 1D bounding interval tree (Z).
-    ZTreeNode * BuildHeightTree(std::vector<ZTreeNode *> &aNodes);
+    ZTreeNode * BuildHeightTree(std::vector<ZTreeNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
 
     /// Draw a single line segment (triangle/plane intersection) to the slice.
     void DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2);
