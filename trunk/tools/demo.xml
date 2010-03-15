@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<csg>
+  <settings>
+    <resolution x="0.01" y="0.01" z="0.01" />
+    <output name="demo" type="slices" format="tga" />
+  </settings>
+  <volume>
+    <difference>
+      <box cx="0.0" cy="0.0" cz="0.0" sx="1.0" sy="1.0" sz="1.0" />
+      <sphere cx="0.0" cy="0.0" cz="0.0" r="0.6" />
+    </difference>
+  </volume>
+</csg>

@@ -50,10 +50,10 @@ clean:
 	$(RM) $(CSGOBJS) $(DEMOOBJS) $(TINYXMLOBJS) csg$(EXE) demo$(EXE)
 
 csg$(EXE): $(CSGOBJS) $(TINYXMLOBJS)
-	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
+	$(CPP) $(LFLAGS) -o $@ $(CSGOBJS) $(TINYXMLOBJS) $(LIBS)
 
 demo$(EXE): $(DEMOOBJS)
-	$(CPP) $(LFLAGS) -o $@ $< $(LIBS)
+	$(CPP) $(LFLAGS) -o $@ $(DEMOOBJS) $(LIBS)
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $<
