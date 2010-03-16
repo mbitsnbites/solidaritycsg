@@ -15,10 +15,7 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
-#include <sstream>
 #include <iostream>
-#include <iomanip>
 #include <vector>
 #include <SolidarityCSG.h>
 
@@ -45,38 +42,44 @@ int main()
     SampleSpace space;
     BoundingBox sceneAABB;
     csg.GetBoundingBox(sceneAABB);
-    space.DefineSpace(sceneAABB, 0.01);
+    space.DefineSpace(sceneAABB, 0.011);
     csg.SetSampleSpace(&space);
     cout << "done!" << endl;
 
-    // Prepare image writer
-    TGAImageWriter output;
-    output.SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
+    // Prepare polygonizer writer
+    Polygonize polygonize;
+    polygonize.SetSampleSpace(&space);
 
     // Begin voxelization
     cout << "Performing boolean operations..." << flush;
-    vector<Voxel> voxelSlice;
-    voxelSlice.resize(space.mDiv[0] * space.mDiv[1]);
+    vector<Voxel> voxelSlice1, voxelSlice2;
+    voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
+    voxelSlice2.resize(space.mDiv[0] * space.mDiv[1]);
+    Voxel * slice = &voxelSlice1[0];
+    Voxel * sliceOld = &voxelSlice2[0];
     for(int i = 0; i < space.mDiv[2]; ++ i)
     {
       // Generate slice data
-      csg.ComposeSlice(&voxelSlice[0], i);
+      csg.ComposeSlice(slice, i);
 
-      // Construct file name for the slice
-      stringstream name;
-      name << "demo_";
-      name.fill('0');
-      name.width(5);
-      name << i;
-      name.width(0);
-      name << ".tga";
+      // Convert to triangles
+      if(i > 0)
+        polygonize.AppendSlicePair(sliceOld, slice, i - 1);
 
-      // Write this file to disk
-      output.SetData(&voxelSlice[0]);
-      output.SetSliceNo(i);
-      output.SetSampleSpace(&space);
-      output.SaveToFile(name.str().c_str());
+      // Swap slice buffers
+      Voxel * tmp = sliceOld;
+      sliceOld = slice;
+      slice = tmp;
     }
+    cout << "done!" << endl;
+
+    // Write mesh file
+    cout << "Writing mesh file..." << flush;
+    Mesh mesh;
+    polygonize.ToMesh(mesh);
+    STLMeshWriter output;
+    output.SetMesh(&mesh);
+    output.SaveToFile("demo.stl");
     cout << "done!" << endl;
   }
   catch(exception &e)
