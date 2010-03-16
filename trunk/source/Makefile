@@ -20,7 +20,8 @@ CPPFLAGS = -O3 -W -Wall -c
 LIB = ar
 LIBFLAGS = -rcs
 DEPEND = g++ -MM
-RM = del /Q
+#RM = del /Q
+RM = rm -f
 
 STATICLIB = libsolidaritycsg.a
 
@@ -33,6 +34,7 @@ OBJS = BoxVoxelize.o \
        STLMeshWriter.o \
        CSGNode.o \
        Polygonize.o \
+       TriBuf.o \
        SampleSpace.o \
        BoundingBox.o \
        Vector3.o
@@ -46,6 +48,7 @@ SRCS = Voxelize/BoxVoxelize.cpp \
        FileIO/STLMeshWriter.cpp \
        Boolean/CSGNode.cpp \
        Polygonize/Polygonize.cpp \
+       Polygonize/TriBuf.cpp \
        SampleSpace.cpp \
        BoundingBox.cpp \
        Vector3.cpp

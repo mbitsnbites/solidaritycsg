@@ -376,55 +376,49 @@ void Polygonize::PorcessOneCube(Cube &aCube, Voxel aLevel)
       return;
 
    // Find the vertices where the surface intersects the cube
-   Vector3 vertlist[12];
+   Vector3 verts[12];
    if(gEdgeTable[cubeindex] & 1)
-      vertlist[0] =
+      verts[0] =
          VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[1], aCube.mValue[0], aCube.mValue[1]);
    if(gEdgeTable[cubeindex] & 2)
-      vertlist[1] =
+      verts[1] =
          VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[2], aCube.mValue[1], aCube.mValue[2]);
    if(gEdgeTable[cubeindex] & 4)
-      vertlist[2] =
+      verts[2] =
          VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[3], aCube.mValue[2], aCube.mValue[3]);
    if(gEdgeTable[cubeindex] & 8)
-      vertlist[3] =
+      verts[3] =
          VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[0], aCube.mValue[3], aCube.mValue[0]);
    if(gEdgeTable[cubeindex] & 16)
-      vertlist[4] =
+      verts[4] =
          VertexInterp(aLevel, aCube.mPoint[4], aCube.mPoint[5], aCube.mValue[4], aCube.mValue[5]);
    if(gEdgeTable[cubeindex] & 32)
-      vertlist[5] =
+      verts[5] =
          VertexInterp(aLevel, aCube.mPoint[5], aCube.mPoint[6], aCube.mValue[5], aCube.mValue[6]);
    if(gEdgeTable[cubeindex] & 64)
-      vertlist[6] =
+      verts[6] =
          VertexInterp(aLevel, aCube.mPoint[6], aCube.mPoint[7], aCube.mValue[6], aCube.mValue[7]);
    if(gEdgeTable[cubeindex] & 128)
-      vertlist[7] =
+      verts[7] =
          VertexInterp(aLevel, aCube.mPoint[7], aCube.mPoint[4], aCube.mValue[7], aCube.mValue[4]);
    if(gEdgeTable[cubeindex] & 256)
-      vertlist[8] =
+      verts[8] =
          VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[4], aCube.mValue[0], aCube.mValue[4]);
    if(gEdgeTable[cubeindex] & 512)
-      vertlist[9] =
+      verts[9] =
          VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[5], aCube.mValue[1], aCube.mValue[5]);
    if(gEdgeTable[cubeindex] & 1024)
-      vertlist[10] =
+      verts[10] =
          VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[6], aCube.mValue[2], aCube.mValue[6]);
    if(gEdgeTable[cubeindex] & 2048)
-      vertlist[11] =
+      verts[11] =
          VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[7], aCube.mValue[3], aCube.mValue[7]);
 
    // Create the triangles
-   int triCount = 0;
    for(int i = 0; gTriTable[cubeindex][i] != -1; i += 3)
-   {
-/*
-      triangles[triCount].p[0] = vertlist[gTriTable[cubeindex][i]];
-      triangles[triCount].p[1] = vertlist[gTriTable[cubeindex][i + 1]];
-      triangles[triCount].p[2] = vertlist[gTriTable[cubeindex][i + 2]];
-*/
-      ++ triCount;
-   }
+     mTriBuf.Append(verts[gTriTable[cubeindex][i]],
+                    verts[gTriTable[cubeindex][i + 1]],
+                    verts[gTriTable[cubeindex][i + 2]]);
 }
 
 
@@ -480,6 +474,11 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
       ++ ptr2;
     }
   }
+}
+
+void Polygonize::ToMesh(Mesh &aMesh)
+{
+  mTriBuf.ToMesh(aMesh);
 }
 
 }
