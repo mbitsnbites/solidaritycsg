@@ -20,8 +20,11 @@
 
 #include "../Vector3.h"
 #include "../SampleSpace.h"
+#include "../FileIO/Mesh.h"
 
 namespace csg {
+
+class Cube;
 
 /// Polygonize class.
 class Polygonize {
@@ -39,10 +42,17 @@ class Polygonize {
     }
 
     /// Calculate the polygons for a pair of slices of the voxel volume.
-    void MakePolygons(Voxel * aSlice1, Voxel * aSlice2, int aZ);
+    void AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1);
 
-  protected:
-    SampleSpace * mSampleSpace; ///< Voxel sample space definition.
+    /// Triangle mesh. This mesh is filled out by the AppendSlicePair() method.
+    Mesh mMesh;
+
+  private:
+    /// Process a single cube, and append the result to the mesh.
+    void PorcessOneCube(Cube &aCube, Voxel aLevel);
+
+    /// Voxel sample space definition.
+    SampleSpace * mSampleSpace;
 };
 
 }
