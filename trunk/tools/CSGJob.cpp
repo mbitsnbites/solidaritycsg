@@ -299,6 +299,27 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
     ((CSGShape *)result)->DefineShape(v);
     return result;
   }
+  else if(nodeName == string("mesh"))
+  {
+    // Load mesh from file
+    const char * src = aElement->Attribute("src");
+    if(!src)
+      throw runtime_error("Missing src attribute in mesh node.");
+    cout << "  Loading mesh file " << src << "..." << flush;
+    STLMeshReader meshReader;
+    Mesh mesh;
+    meshReader.SetMesh(&mesh);
+    meshReader.LoadFromFile(src);
+
+    // Create shape node
+    cout << "building..." << flush;
+    MeshVoxelize * v = new MeshVoxelize;
+    v->SetTriangles(mesh);
+    CSGShape * result = new CSGShape();
+    ((CSGShape *)result)->DefineShape(v);
+    cout << "done!" << endl;
+    return result;
+  }
   else
   {
     string err = string("Invalid CSG node: ") + nodeName;
