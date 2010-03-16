@@ -26,18 +26,21 @@ using namespace std;
 int main(int argc, char ** argv)
 {
   // Check/get arguments
-  if(argc != 2)
+  if(argc < 2)
   {
-    cout << "Usage: " << argv[0] << " job-xml" << endl;
+    cout << "Usage: " << argv[0] << " job-xml [job-xml [...]]" << endl;
     return -1;
   }
-  char * inFile = argv[1];
-
   try
   {
-    CSGJob job;
-    job.LoadFromXML(inFile);
-    job.Execute();
+    for(int i = 1; i < argc; ++ i)
+    {
+      CSGJob job;
+      job.LoadFromXML(argv[i]);
+      job.Execute();
+      if(i < (argc - 1))
+        cout << endl;
+    }
   }
   catch(exception &e)
   {
