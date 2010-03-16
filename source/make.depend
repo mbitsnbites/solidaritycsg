@@ -1,25 +1,31 @@
-Voxelize.o: Voxelize/Voxelize.cpp Voxelize/Voxelize.h \
-  Voxelize/../Vector3.h Voxelize/../BoundingBox.h Voxelize/../Vector3.h
 BoxVoxelize.o: Voxelize/BoxVoxelize.cpp Voxelize/BoxVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
-  Voxelize/../Vector3.h
+  Voxelize/../Vector3.h Voxelize/../SampleSpace.h \
+  Voxelize/../BoundingBox.h
 SphereVoxelize.o: Voxelize/SphereVoxelize.cpp Voxelize/SphereVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
-  Voxelize/../Vector3.h
+  Voxelize/../Vector3.h Voxelize/../SampleSpace.h \
+  Voxelize/../BoundingBox.h
 MeshVoxelize.o: Voxelize/MeshVoxelize.cpp Voxelize/MeshVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
-  Voxelize/../Vector3.h
+  Voxelize/../Vector3.h Voxelize/../SampleSpace.h \
+  Voxelize/../BoundingBox.h Voxelize/../FileIO/Mesh.h \
+  Voxelize/../FileIO/../Vector3.h
 TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
   FileIO/ImageWriter.h FileIO/../Voxelize/Voxelize.h \
   FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../BoundingBox.h \
-  FileIO/../Voxelize/../Vector3.h
+  FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../SampleSpace.h \
+  FileIO/../Voxelize/../BoundingBox.h
 Mesh.o: FileIO/Mesh.cpp FileIO/Mesh.h FileIO/../Vector3.h
 STLMeshReader.o: FileIO/STLMeshReader.cpp FileIO/STLMeshReader.h \
   FileIO/MeshReader.h FileIO/Mesh.h FileIO/../Vector3.h
 STLMeshWriter.o: FileIO/STLMeshWriter.cpp FileIO/STLMeshWriter.h \
   FileIO/MeshWriter.h FileIO/Mesh.h FileIO/../Vector3.h
 CSGNode.o: Boolean/CSGNode.cpp Boolean/CSGNode.h Boolean/../BoundingBox.h \
-  Boolean/../Vector3.h Boolean/../Voxelize/Voxelize.h \
-  Boolean/../Voxelize/../Vector3.h Boolean/../Voxelize/../BoundingBox.h
+  Boolean/../Vector3.h Boolean/../SampleSpace.h Boolean/../BoundingBox.h \
+  Boolean/../Voxelize/Voxelize.h Boolean/../Voxelize/../Vector3.h \
+  Boolean/../Voxelize/../BoundingBox.h \
+  Boolean/../Voxelize/../SampleSpace.h
+SampleSpace.o: SampleSpace.cpp SampleSpace.h Vector3.h BoundingBox.h
 BoundingBox.o: BoundingBox.cpp BoundingBox.h Vector3.h
 Vector3.o: Vector3.cpp Vector3.h
