@@ -27,6 +27,7 @@
 #include "FileIO/STLMeshReader.h"
 #include "FileIO/STLMeshWriter.h"
 #include "Boolean/CSGNode.h"
+#include "Polygonize/Polygonize.h"
 
 
 //-----------------------------------------------------------------------------

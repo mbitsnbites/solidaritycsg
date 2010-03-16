@@ -447,9 +447,9 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
       for(int i = 0; i < 8; ++ i)
         c.mPoint[i] = p;
       c.mPoint[1].x += voxelSize.x;
-      c.mPoint[3].x += voxelSize.x;
+      c.mPoint[2].x += voxelSize.x;
       c.mPoint[5].x += voxelSize.x;
-      c.mPoint[7].x += voxelSize.x;
+      c.mPoint[6].x += voxelSize.x;
       c.mPoint[2].y += voxelSize.y;
       c.mPoint[3].y += voxelSize.y;
       c.mPoint[6].y += voxelSize.y;
@@ -460,12 +460,12 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
       c.mPoint[7].z += voxelSize.z;
       c.mValue[0] = ptr1[0];
       c.mValue[1] = ptr1[1];
-      c.mValue[2] = ptr1[mSampleSpace->mDiv[0]];
-      c.mValue[3] = ptr1[mSampleSpace->mDiv[0] + 1];
+      c.mValue[2] = ptr1[mSampleSpace->mDiv[0] + 1];
+      c.mValue[3] = ptr1[mSampleSpace->mDiv[0]];
       c.mValue[4] = ptr2[0];
       c.mValue[5] = ptr2[1];
-      c.mValue[6] = ptr2[mSampleSpace->mDiv[0]];
-      c.mValue[7] = ptr2[mSampleSpace->mDiv[0] + 1];
+      c.mValue[6] = ptr2[mSampleSpace->mDiv[0] + 1];
+      c.mValue[7] = ptr2[mSampleSpace->mDiv[0]];
 
       // Process the cube (produce triangles)
       PorcessOneCube(c, 0);
@@ -473,6 +473,8 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
       ++ ptr1;
       ++ ptr2;
     }
+    ++ ptr1;
+    ++ ptr2;
   }
 }
 
