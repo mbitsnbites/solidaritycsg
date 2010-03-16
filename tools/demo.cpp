@@ -29,23 +29,6 @@ int main(int argc, char ** argv)
 {
   try
   {
-/*
-    // Test 1: Load an STL file...
-    cout << "Loading STL file..." << flush;
-    STLMeshReader meshReader;
-    Mesh myMesh;
-    meshReader.SetMesh(&myMesh);
-    meshReader.LoadFromFile("bunny.stl");
-    cout << "done!" << endl;
-
-    // Test 2: ...and write it out again...
-    cout << "Writing STL file..." << flush;
-    STLMeshWriter meshWriter;
-    meshWriter.SetMesh(&myMesh);
-    meshWriter.SaveToFile("bunny-dump.stl");
-    cout << "done!" << endl;
-*/
-
     // Set up boolean tree
     cout << "Setting up CSG tree..." << flush;
     CSGDifference csg;
@@ -81,7 +64,7 @@ int main(int argc, char ** argv)
 
       // Construct file name for the slice
       stringstream name;
-      name << "output_";
+      name << "demo_";
       name.fill('0');
       name.width(5);
       name << i;
