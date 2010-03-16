@@ -21,6 +21,7 @@
 // http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 //------------------------------------------------------------------------------
 
+#include <stdexcept>
 #include "Polygonize.h"
 
 using namespace std;
@@ -326,100 +327,159 @@ static int gTriTable[256][16] = {
 
 /// Linearly interpolate the position where an isosurface cuts an edge between
 /// two vertices, each with their own scalar value.
-static Vector3 VertexInterp(double aLevel, Vector3 &p1, Vector3 &p2,
-  double &aValue1, double &aValue2)
+static Vector3 VertexInterp(Voxel aLevel, Vector3 &p1, Vector3 &p2,
+  Voxel aValue1, Voxel aValue2)
 {
-  Vector3 p;
-
-  if(fabs(aLevel - aValue1) < 1e-50)
-    return p1;
-  if(fabs(aLevel - aValue2) < 1e-50)
-    return p2;
-  if(fabs(aValue1 - aValue2) < 1e-50)
+  if(aValue1 == aValue2)
     return p1;
 
-   double t = (aLevel - aValue1) / (aValue2 - aValue1);
-   p.x = p1.x + t * (p2.x - p1.x);
-   p.y = p1.y + t * (p2.y - p1.y);
-   p.z = p1.z + t * (p2.z - p1.z);
-
-   return p;
+   double t = (double(aLevel) - double(aValue1)) /
+              (double(aValue2) - double(aValue1));
+   return Vector3(p1.x + t * (p2.x - p1.x),
+                  p1.y + t * (p2.y - p1.y),
+                  p1.z + t * (p2.z - p1.z));
 }
 
-/*
-   Given a grid cell and an isolevel, calculate the triangular
-   facets required to represent the isosurface through the cell.
-   Return the number of triangular facets, the array "triangles"
-   will be loaded up with the vertices at most 5 triangular facets.
-	0 will be returned if the grid cell is either totally above
-   of totally below the isolevel.
-*/
-int Polygonize(GRIDCELL grid, double &aLevel, TRIANGLE *triangles)
+
+//------------------------------------------------------------------------------
+// Cube
+//------------------------------------------------------------------------------
+
+/// Cube class. Used for processing indiviual cubes.
+class Cube {
+  public:
+    Vector3 mPoint[8];
+    Voxel mValue[8];
+};
+
+
+//------------------------------------------------------------------------------
+// Polygonize
+//------------------------------------------------------------------------------
+
+void Polygonize::PorcessOneCube(Cube &aCube, Voxel aLevel)
 {
    // Determine the index into the edge table which tells us which vertices are
    // inside of the surface
    int cubeindex = 0;
-   if(grid.val[0] < aLevel) cubeindex |= 1;
-   if(grid.val[1] < aLevel) cubeindex |= 2;
-   if(grid.val[2] < aLevel) cubeindex |= 4;
-   if(grid.val[3] < aLevel) cubeindex |= 8;
-   if(grid.val[4] < aLevel) cubeindex |= 16;
-   if(grid.val[5] < aLevel) cubeindex |= 32;
-   if(grid.val[6] < aLevel) cubeindex |= 64;
-   if(grid.val[7] < aLevel) cubeindex |= 128;
+   if(aCube.mValue[0] < aLevel) cubeindex |= 1;
+   if(aCube.mValue[1] < aLevel) cubeindex |= 2;
+   if(aCube.mValue[2] < aLevel) cubeindex |= 4;
+   if(aCube.mValue[3] < aLevel) cubeindex |= 8;
+   if(aCube.mValue[4] < aLevel) cubeindex |= 16;
+   if(aCube.mValue[5] < aLevel) cubeindex |= 32;
+   if(aCube.mValue[6] < aLevel) cubeindex |= 64;
+   if(aCube.mValue[7] < aLevel) cubeindex |= 128;
 
    // Cube is entirely in/out of the surface
    if(gEdgeTable[cubeindex] == 0)
-      return(0);
+      return;
 
    // Find the vertices where the surface intersects the cube
    Vector3 vertlist[12];
    if(gEdgeTable[cubeindex] & 1)
       vertlist[0] =
-         VertexInterp(aLevel,grid.p[0],grid.p[1],grid.val[0],grid.val[1]);
+         VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[1], aCube.mValue[0], aCube.mValue[1]);
    if(gEdgeTable[cubeindex] & 2)
       vertlist[1] =
-         VertexInterp(aLevel,grid.p[1],grid.p[2],grid.val[1],grid.val[2]);
+         VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[2], aCube.mValue[1], aCube.mValue[2]);
    if(gEdgeTable[cubeindex] & 4)
       vertlist[2] =
-         VertexInterp(aLevel,grid.p[2],grid.p[3],grid.val[2],grid.val[3]);
+         VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[3], aCube.mValue[2], aCube.mValue[3]);
    if(gEdgeTable[cubeindex] & 8)
       vertlist[3] =
-         VertexInterp(aLevel,grid.p[3],grid.p[0],grid.val[3],grid.val[0]);
+         VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[0], aCube.mValue[3], aCube.mValue[0]);
    if(gEdgeTable[cubeindex] & 16)
       vertlist[4] =
-         VertexInterp(aLevel,grid.p[4],grid.p[5],grid.val[4],grid.val[5]);
+         VertexInterp(aLevel, aCube.mPoint[4], aCube.mPoint[5], aCube.mValue[4], aCube.mValue[5]);
    if(gEdgeTable[cubeindex] & 32)
       vertlist[5] =
-         VertexInterp(aLevel,grid.p[5],grid.p[6],grid.val[5],grid.val[6]);
+         VertexInterp(aLevel, aCube.mPoint[5], aCube.mPoint[6], aCube.mValue[5], aCube.mValue[6]);
    if(gEdgeTable[cubeindex] & 64)
       vertlist[6] =
-         VertexInterp(aLevel,grid.p[6],grid.p[7],grid.val[6],grid.val[7]);
+         VertexInterp(aLevel, aCube.mPoint[6], aCube.mPoint[7], aCube.mValue[6], aCube.mValue[7]);
    if(gEdgeTable[cubeindex] & 128)
       vertlist[7] =
-         VertexInterp(aLevel,grid.p[7],grid.p[4],grid.val[7],grid.val[4]);
+         VertexInterp(aLevel, aCube.mPoint[7], aCube.mPoint[4], aCube.mValue[7], aCube.mValue[4]);
    if(gEdgeTable[cubeindex] & 256)
       vertlist[8] =
-         VertexInterp(aLevel,grid.p[0],grid.p[4],grid.val[0],grid.val[4]);
+         VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[4], aCube.mValue[0], aCube.mValue[4]);
    if(gEdgeTable[cubeindex] & 512)
       vertlist[9] =
-         VertexInterp(aLevel,grid.p[1],grid.p[5],grid.val[1],grid.val[5]);
+         VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[5], aCube.mValue[1], aCube.mValue[5]);
    if(gEdgeTable[cubeindex] & 1024)
       vertlist[10] =
-         VertexInterp(aLevel,grid.p[2],grid.p[6],grid.val[2],grid.val[6]);
+         VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[6], aCube.mValue[2], aCube.mValue[6]);
    if(gEdgeTable[cubeindex] & 2048)
       vertlist[11] =
-         VertexInterp(aLevel,grid.p[3],grid.p[7],grid.val[3],grid.val[7]);
+         VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[7], aCube.mValue[3], aCube.mValue[7]);
 
    // Create the triangles
    int triCount = 0;
    for(int i = 0; gTriTable[cubeindex][i] != -1; i += 3)
    {
+/*
       triangles[triCount].p[0] = vertlist[gTriTable[cubeindex][i]];
       triangles[triCount].p[1] = vertlist[gTriTable[cubeindex][i + 1]];
       triangles[triCount].p[2] = vertlist[gTriTable[cubeindex][i + 2]];
+*/
       ++ triCount;
    }
+}
 
-   return triCount;
+
+void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
+{
+  // Check that the voxel space has been properly set up
+  if(!mSampleSpace || !mSampleSpace->IsValid())
+    throw runtime_error("Undefined/invalid voxel space dimensions.");
+
+  // Calculate voxel size
+  Vector3 voxelSize = mSampleSpace->VoxelSize();
+
+  // Process all voxel cubes in this slice pair
+  Voxel *ptr1 = aSlice1, *ptr2 = aSlice2;
+  Vector3 p;
+  p.z = aZ1 * voxelSize.z + mSampleSpace->mAABB.mMin.z;
+  for(int y = 0; y < mSampleSpace->mDiv[1] - 1; ++ y)
+  {
+    p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
+    for(int x = 0; x < mSampleSpace->mDiv[0] - 1; ++ x)
+    {
+      p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+
+      // Initialize cube information
+      Cube c;
+      for(int i = 0; i < 8; ++ i)
+        c.mPoint[i] = p;
+      c.mPoint[1].x += voxelSize.x;
+      c.mPoint[3].x += voxelSize.x;
+      c.mPoint[5].x += voxelSize.x;
+      c.mPoint[7].x += voxelSize.x;
+      c.mPoint[2].y += voxelSize.y;
+      c.mPoint[3].y += voxelSize.y;
+      c.mPoint[6].y += voxelSize.y;
+      c.mPoint[7].y += voxelSize.y;
+      c.mPoint[4].z += voxelSize.z;
+      c.mPoint[5].z += voxelSize.z;
+      c.mPoint[6].z += voxelSize.z;
+      c.mPoint[7].z += voxelSize.z;
+      c.mValue[0] = ptr1[0];
+      c.mValue[1] = ptr1[1];
+      c.mValue[2] = ptr1[mSampleSpace->mDiv[0]];
+      c.mValue[3] = ptr1[mSampleSpace->mDiv[0] + 1];
+      c.mValue[4] = ptr2[0];
+      c.mValue[5] = ptr2[1];
+      c.mValue[6] = ptr2[mSampleSpace->mDiv[0]];
+      c.mValue[7] = ptr2[mSampleSpace->mDiv[0] + 1];
+
+      // Process the cube (produce triangles)
+      PorcessOneCube(c, 0);
+
+      ++ ptr1;
+      ++ ptr2;
+    }
+  }
+}
+
 }

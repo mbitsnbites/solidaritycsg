@@ -32,6 +32,7 @@ OBJS = BoxVoxelize.o \
        STLMeshReader.o \
        STLMeshWriter.o \
        CSGNode.o \
+       Polygonize.o \
        SampleSpace.o \
        BoundingBox.o \
        Vector3.o
@@ -44,6 +45,7 @@ SRCS = Voxelize/BoxVoxelize.cpp \
        FileIO/STLMeshReader.cpp \
        FileIO/STLMeshWriter.cpp \
        Boolean/CSGNode.cpp \
+       Polygonize/Polygonize.cpp \
        SampleSpace.cpp \
        BoundingBox.cpp \
        Vector3.cpp
@@ -63,6 +65,9 @@ clean:
 	$(CPP) $(CPPFLAGS) $<
 
 %.o: Boolean/%.cpp
+	$(CPP) $(CPPFLAGS) $<
+
+%.o: Polygonize/%.cpp
 	$(CPP) $(CPPFLAGS) $<
 
 $(STATICLIB): $(OBJS)

@@ -26,6 +26,10 @@ CSGNode.o: Boolean/CSGNode.cpp Boolean/CSGNode.h Boolean/../BoundingBox.h \
   Boolean/../Voxelize/Voxelize.h Boolean/../Voxelize/../Vector3.h \
   Boolean/../Voxelize/../BoundingBox.h \
   Boolean/../Voxelize/../SampleSpace.h
+Polygonize.o: Polygonize/Polygonize.cpp Polygonize/Polygonize.h \
+  Polygonize/../Vector3.h Polygonize/../SampleSpace.h \
+  Polygonize/../Vector3.h Polygonize/../BoundingBox.h \
+  Polygonize/../FileIO/Mesh.h Polygonize/../FileIO/../Vector3.h
 SampleSpace.o: SampleSpace.cpp SampleSpace.h Vector3.h BoundingBox.h
 BoundingBox.o: BoundingBox.cpp BoundingBox.h Vector3.h
 Vector3.o: Vector3.cpp Vector3.h
