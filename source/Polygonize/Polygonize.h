@@ -18,9 +18,9 @@
 #ifndef _POLYGONIZE_H_
 #define _POLYGONIZE_H_
 
-#include "../Vector3.h"
 #include "../SampleSpace.h"
 #include "../FileIO/Mesh.h"
+#include "TriBuf.h"
 
 namespace csg {
 
@@ -44,8 +44,8 @@ class Polygonize {
     /// Calculate the polygons for a pair of slices of the voxel volume.
     void AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1);
 
-    /// Triangle mesh. This mesh is filled out by the AppendSlicePair() method.
-    Mesh mMesh;
+    /// Export the state of the polygonizer to a mesh object.
+    void ToMesh(Mesh &aMesh);
 
   private:
     /// Process a single cube, and append the result to the mesh.
@@ -53,6 +53,9 @@ class Polygonize {
 
     /// Voxel sample space definition.
     SampleSpace * mSampleSpace;
+
+    /// Triangle buffer.
+    TriBuf mTriBuf;
 };
 
 }
