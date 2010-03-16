@@ -23,11 +23,11 @@
 #include <vector>
 #include "CSGJob.h"
 
-#include <SolidarityCSG.h>
-#include <tinyxml.h>
 
 using namespace csg;
 using namespace std;
+using namespace os;
+
 
 //------------------------------------------------------------------------------
 // CSGJob
@@ -86,14 +86,18 @@ void CSGJob::LoadFromXML(const char * aFileName)
 
 void CSGJob::Execute()
 {
+  double dt;
+
   // Set up a sample space
+  mTimer.Push();
   cout << "Setting up voxel sample space..." << flush;
   SampleSpace space;
   BoundingBox sceneAABB;
   mCSGRoot->GetBoundingBox(sceneAABB);
   space.DefineSpace(sceneAABB, mResolution);
   mCSGRoot->SetSampleSpace(&space);
-  cout << "done!" << endl;
+  dt = mTimer.PopDelta();
+  cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
   // Prepare image writer
   ImageWriter * output = 0;
@@ -107,6 +111,7 @@ void CSGJob::Execute()
 
     // Perform operation...
     cout << "Executing job..." << flush;
+    mTimer.Push();
     vector<Voxel> voxelSlice;
     voxelSlice.resize(space.mDiv[0] * space.mDiv[1]);
     for(int i = 0; i < space.mDiv[2]; ++ i)
@@ -130,7 +135,8 @@ void CSGJob::Execute()
       output->SetSampleSpace(&space);
       output->SaveToFile(name.str().c_str());
     }
-    cout << "done!" << endl;
+    dt = mTimer.PopDelta();
+    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
     delete output;
     output = 0;
@@ -306,6 +312,7 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
     if(!src)
       throw runtime_error("Missing src attribute in mesh node.");
     cout << "  Loading mesh file " << src << "..." << flush;
+    mTimer.Push();
     STLMeshReader meshReader;
     Mesh mesh;
     meshReader.SetMesh(&mesh);
@@ -317,7 +324,8 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
     v->SetTriangles(mesh);
     CSGShape * result = new CSGShape();
     ((CSGShape *)result)->DefineShape(v);
-    cout << "done!" << endl;
+    double dt = mTimer.PopDelta();
+    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
     return result;
   }
   else

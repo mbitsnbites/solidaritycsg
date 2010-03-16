@@ -21,6 +21,7 @@
 #include <string>
 #include <tinyxml.h>
 #include <SolidarityCSG.h>
+#include "OS/OSTime.h"
 
 /// CSG job class.
 class CSGJob {
@@ -72,6 +73,9 @@ class CSGJob {
 
     /// Output format.
     OutputFormat mOutputFormat;
+
+    /// Timer object (for profiling etc).
+    os::Timer mTimer;
 };
 
 #endif // _CSGJOB_H_

@@ -34,7 +34,8 @@ EXE =
 
 # CSG program object files
 CSGOBJS = csg.o \
-          CSGJob.o
+          CSGJob.o \
+          OSTime.o
 
 # Demo program object files
 DEMOOBJS = demo.o
@@ -59,9 +60,14 @@ demo$(EXE): $(DEMOOBJS)
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $<
 
+%.o: OS/%.cpp
+	$(CPP) $(CPPFLAGS) $<
+
 %.o: TinyXML/%.cpp
 	$(CPP) $(TINYCPPFLAGS) $<
 
 # Dependencies
-CSGJob.o: CSGJob.cpp CSGJob.h
-csg.o: CSGJob.h
+demo.o: demo.cpp
+csg.o: csg.cpp CSGJob.h
+CSGJob.o: CSGJob.cpp CSGJob.h OS/OSTime.h
+OSTime.o: OS/OSTime.cpp OS/OSTime.h
