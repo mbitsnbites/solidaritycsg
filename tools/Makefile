@@ -33,7 +33,8 @@ RM = rm -f
 EXE =
 
 # CSG program object files
-CSGOBJS = csg.o
+CSGOBJS = csg.o \
+          CSGJob.o
 
 # Demo program object files
 DEMOOBJS = demo.o
@@ -60,3 +61,7 @@ demo$(EXE): $(DEMOOBJS)
 
 %.o: TinyXML/%.cpp
 	$(CPP) $(TINYCPPFLAGS) $<
+
+# Dependencies
+CSGJob.o: CSGJob.cpp CSGJob.h
+csg.o: CSGJob.h
