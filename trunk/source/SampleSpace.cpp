@@ -15,7 +15,7 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Voxelize.h"
+#include "SampleSpace.h"
 #include <stdexcept>
 #include <cmath>
 

@@ -21,6 +21,7 @@
 #include <list>
 #include <vector>
 #include "../BoundingBox.h"
+#include "../SampleSpace.h"
 #include "../Voxelize/Voxelize.h"
 
 namespace csg {
