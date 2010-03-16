@@ -91,7 +91,7 @@ void CSGJob::Execute()
   SampleSpace space;
   BoundingBox sceneAABB;
   mCSGRoot->GetBoundingBox(sceneAABB);
-  space.DefineSpace(sceneAABB, 0.01);
+  space.DefineSpace(sceneAABB, mResolution);
   mCSGRoot->SetSampleSpace(&space);
   cout << "done!" << endl;
 
