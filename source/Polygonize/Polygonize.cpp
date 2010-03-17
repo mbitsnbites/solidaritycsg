@@ -29,7 +29,7 @@ using namespace std;
 namespace csg {
 
 // Look-up 1 table for the marching cubes algorithm
-static int gEdgeTable[256] = {
+static short gEdgeTable[256] = {
   0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
   0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
   0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -65,7 +65,7 @@ static int gEdgeTable[256] = {
 };
 
 // Look-up 2 table for the marching cubes algorithm
-static int gTriTable[256][16] = {
+static signed char gTriTable[256][16] = {
   {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
   {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
   {0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -325,35 +325,18 @@ static int gTriTable[256][16] = {
 };
 
 
-/// Linearly interpolate the position where an isosurface cuts an edge between
-/// two vertices, each with their own scalar value.
-static Vector3 VertexInterp(Vector3 &p1, Vector3 &p2, Voxel aValue1, Voxel aValue2)
-{
-  if(aValue1 == aValue2)
-    return p1;
-
-  double t = -double(aValue1) / (double(aValue2) - double(aValue1));
-  return Vector3(p1.x + t * (p2.x - p1.x),
-                 p1.y + t * (p2.y - p1.y),
-                 p1.z + t * (p2.z - p1.z));
-}
-
-
-//------------------------------------------------------------------------------
-// Cube
-//------------------------------------------------------------------------------
-
-/// Cube class. Used for processing indiviual cubes.
-class Cube {
-  public:
-    Vector3 mPoint[8];
-    Voxel mValue[8];
-};
-
-
 //------------------------------------------------------------------------------
 // Polygonize
 //------------------------------------------------------------------------------
+
+/// Calculate the position of an edge split, given two vertex values (the iso
+/// level is zero).
+static inline double EdgeSplit(Voxel aValue1, Voxel aValue2)
+{
+  if(aValue1 == aValue2)
+    return 0.0;
+  return -double(aValue1) / (double(aValue2) - double(aValue1));
+}
 
 void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
 {
@@ -373,82 +356,76 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
     p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
     for(int x = 0; x < mSampleSpace->mDiv[0] - 1; ++ x)
     {
-      p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
-
-      // Initialize cube information
-      Cube c;
-      c.mValue[0] = ptr1[0];
-      c.mValue[1] = ptr1[1];
-      c.mValue[2] = ptr1[mSampleSpace->mDiv[0] + 1];
-      c.mValue[3] = ptr1[mSampleSpace->mDiv[0]];
-      c.mValue[4] = ptr2[0];
-      c.mValue[5] = ptr2[1];
-      c.mValue[6] = ptr2[mSampleSpace->mDiv[0] + 1];
-      c.mValue[7] = ptr2[mSampleSpace->mDiv[0]];
+      // Cube corner indices (dx,dy,dz), relative to cube origin:
+      // 0: (0,0,0)
+      // 1: (1,0,0)
+      // 2: (1,1,0)
+      // 3: (0,1,0)
+      // 4: (0,0,1)
+      // 5: (1,0,1)
+      // 6: (1,1,1)
+      // 7: (0,1,1)
+      Voxel values[8];
+      values[0] = ptr1[0];
+      values[1] = ptr1[1];
+      values[2] = ptr1[mSampleSpace->mDiv[0] + 1];
+      values[3] = ptr1[mSampleSpace->mDiv[0]];
+      values[4] = ptr2[0];
+      values[5] = ptr2[1];
+      values[6] = ptr2[mSampleSpace->mDiv[0] + 1];
+      values[7] = ptr2[mSampleSpace->mDiv[0]];
 
       // Determine the index into the edge table which tells us which vertices are
       // inside of the surface
       int cubeindex = 0;
-      if(c.mValue[0] < 0) cubeindex |= 1;
-      if(c.mValue[1] < 0) cubeindex |= 2;
-      if(c.mValue[2] < 0) cubeindex |= 4;
-      if(c.mValue[3] < 0) cubeindex |= 8;
-      if(c.mValue[4] < 0) cubeindex |= 16;
-      if(c.mValue[5] < 0) cubeindex |= 32;
-      if(c.mValue[6] < 0) cubeindex |= 64;
-      if(c.mValue[7] < 0) cubeindex |= 128;
+      if(values[0] < 0) cubeindex |= 1;
+      if(values[1] < 0) cubeindex |= 2;
+      if(values[2] < 0) cubeindex |= 4;
+      if(values[3] < 0) cubeindex |= 8;
+      if(values[4] < 0) cubeindex |= 16;
+      if(values[5] < 0) cubeindex |= 32;
+      if(values[6] < 0) cubeindex |= 64;
+      if(values[7] < 0) cubeindex |= 128;
 
-      // Is cube entirely in/out of the surface?
-      if(gEdgeTable[cubeindex] != 0)
+      // Is the cube entirely in/out of the surface?
+      short edgeMask = gEdgeTable[cubeindex];
+      if(edgeMask != 0)
       {
-        // Cube coordinates
-        for(int i = 0; i < 8; ++ i)
-          c.mPoint[i] = p;
-        c.mPoint[1].x += voxelSize.x;
-        c.mPoint[2].x += voxelSize.x;
-        c.mPoint[5].x += voxelSize.x;
-        c.mPoint[6].x += voxelSize.x;
-        c.mPoint[2].y += voxelSize.y;
-        c.mPoint[3].y += voxelSize.y;
-        c.mPoint[6].y += voxelSize.y;
-        c.mPoint[7].y += voxelSize.y;
-        c.mPoint[4].z += voxelSize.z;
-        c.mPoint[5].z += voxelSize.z;
-        c.mPoint[6].z += voxelSize.z;
-        c.mPoint[7].z += voxelSize.z;
+        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+
+        // High corner of the cube
+        Vector3 p2 = p + voxelSize;
 
         // Find the vertices where the surface intersects the cube
         Vector3 verts[12];
-        if(gEdgeTable[cubeindex] & 1)
-          verts[0] = VertexInterp(c.mPoint[0], c.mPoint[1], c.mValue[0], c.mValue[1]);
-        if(gEdgeTable[cubeindex] & 2)
-          verts[1] = VertexInterp(c.mPoint[1], c.mPoint[2], c.mValue[1], c.mValue[2]);
-        if(gEdgeTable[cubeindex] & 4)
-          verts[2] = VertexInterp(c.mPoint[2], c.mPoint[3], c.mValue[2], c.mValue[3]);
-        if(gEdgeTable[cubeindex] & 8)
-          verts[3] = VertexInterp(c.mPoint[3], c.mPoint[0], c.mValue[3], c.mValue[0]);
-        if(gEdgeTable[cubeindex] & 16)
-          verts[4] = VertexInterp(c.mPoint[4], c.mPoint[5], c.mValue[4], c.mValue[5]);
-        if(gEdgeTable[cubeindex] & 32)
-          verts[5] = VertexInterp(c.mPoint[5], c.mPoint[6], c.mValue[5], c.mValue[6]);
-        if(gEdgeTable[cubeindex] & 64)
-          verts[6] = VertexInterp(c.mPoint[6], c.mPoint[7], c.mValue[6], c.mValue[7]);
-        if(gEdgeTable[cubeindex] & 128)
-          verts[7] = VertexInterp(c.mPoint[7], c.mPoint[4], c.mValue[7], c.mValue[4]);
-        if(gEdgeTable[cubeindex] & 256)
-          verts[8] = VertexInterp(c.mPoint[0], c.mPoint[4], c.mValue[0], c.mValue[4]);
-        if(gEdgeTable[cubeindex] & 512)
-          verts[9] = VertexInterp(c.mPoint[1], c.mPoint[5], c.mValue[1], c.mValue[5]);
-        if(gEdgeTable[cubeindex] & 1024)
-          verts[10] = VertexInterp(c.mPoint[2], c.mPoint[6], c.mValue[2], c.mValue[6]);
-        if(gEdgeTable[cubeindex] & 2048)
-          verts[11] = VertexInterp(c.mPoint[3], c.mPoint[7], c.mValue[3], c.mValue[7]);
+        if(edgeMask & 1)
+          verts[0] = Vector3(p.x + EdgeSplit(values[0], values[1]) * voxelSize.x, p.y, p.z);
+        if(edgeMask & 2)
+          verts[1] = Vector3(p2.x, p.y + EdgeSplit(values[1], values[2]) * voxelSize.y, p.z);
+        if(edgeMask & 4)
+          verts[2] = Vector3(p2.x - EdgeSplit(values[2], values[3]) * voxelSize.x, p2.y, p.z);
+        if(edgeMask & 8)
+          verts[3] = Vector3(p.x, p2.y - EdgeSplit(values[3], values[0]) * voxelSize.y, p.z);
+        if(edgeMask & 16)
+          verts[4] = Vector3(p.x + EdgeSplit(values[4], values[5]) * voxelSize.x, p.y, p2.z);
+        if(edgeMask & 32)
+          verts[5] = Vector3(p2.x, p.y + EdgeSplit(values[5], values[6]) * voxelSize.y, p2.z);
+        if(edgeMask & 64)
+          verts[6] = Vector3(p2.x - EdgeSplit(values[6], values[7]) * voxelSize.x, p2.y, p2.z);
+        if(edgeMask & 128)
+          verts[7] = Vector3(p.x, p2.y - EdgeSplit(values[7], values[4]) * voxelSize.y, p2.z);
+        if(edgeMask & 256)
+          verts[8] = Vector3(p.x, p.y, p.z + EdgeSplit(values[0], values[4]) * voxelSize.z);
+        if(edgeMask & 512)
+          verts[9] = Vector3(p2.x, p.y, p.z + EdgeSplit(values[1], values[5]) * voxelSize.z);
+        if(edgeMask & 1024)
+          verts[10] = Vector3(p2.x, p2.y, p.z + EdgeSplit(values[2], values[6]) * voxelSize.z);
+        if(edgeMask & 2048)
+          verts[11] = Vector3(p.x, p2.y, p.z + EdgeSplit(values[3], values[7]) * voxelSize.z);
 
         // Create the triangles
-        for(int i = 0; gTriTable[cubeindex][i] != -1; i += 3)
-          mTriBuf.Append(verts[gTriTable[cubeindex][i]],
-                         verts[gTriTable[cubeindex][i + 1]],
-                         verts[gTriTable[cubeindex][i + 2]]);
+        for(signed char * idxPtr = &gTriTable[cubeindex][0]; *idxPtr != -1; idxPtr += 3)
+          mTriBuf.Append(verts[idxPtr[0]], verts[idxPtr[1]], verts[idxPtr[2]]);
       }
 
       ++ ptr1;
