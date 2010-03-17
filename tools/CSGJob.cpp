@@ -38,8 +38,8 @@ CSGJob::CSGJob()
   mCSGRoot = 0;
   mResolution = Vector3(0.1, 0.1, 0.1);
   mOutputFileName = string("output");
-  mOutputType = otSlices;
-  mOutputFormat = ofTGA;
+  mOutputType = otMesh;
+  mOutputFormat = ofSTL;
 }
 
 CSGJob::~CSGJob()
@@ -99,52 +99,100 @@ void CSGJob::Execute()
   dt = mTimer.PopDelta();
   cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
-  // Prepare image writer
-  ImageWriter * output = 0;
-  if(mOutputFormat == ofTGA)
-    output = new TGAImageWriter;
-  else
-    throw runtime_error("Unsupported output format.");
+  ImageWriter * imgOut = 0;
+  Polygonize polygonize;
+  if(mOutputType == otSlices)
+  {
+    // Prepare image writer
+    if(mOutputFormat == ofTGA)
+      imgOut = new TGAImageWriter;
+    else
+      throw runtime_error("Unsupported output format for slices.");
+    imgOut->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
+  }
+  else if(mOutputType == otMesh)
+  {
+    // Prepare polygonizer
+    polygonize.SetSampleSpace(&space);
+  }
+
   try
   {
-    output->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
-
     // Perform operation...
     cout << "Executing job..." << flush;
     mTimer.Push();
-    vector<Voxel> voxelSlice;
-    voxelSlice.resize(space.mDiv[0] * space.mDiv[1]);
+    vector<Voxel> voxelSlice1, voxelSlice2;
+    voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
+    voxelSlice2.resize(space.mDiv[0] * space.mDiv[1]);
+    Voxel * slice = &voxelSlice1[0];
+    Voxel * sliceOld = &voxelSlice2[0];
     for(int i = 0; i < space.mDiv[2]; ++ i)
     {
       // Generate slice data
-      mCSGRoot->ComposeSlice(&voxelSlice[0], i);
+      mCSGRoot->ComposeSlice(slice, i);
 
-      // Construct file name for the slice
-      stringstream name;
-      name << mOutputFileName;
-      name.fill('0');
-      name.width(5);
-      name << i;
-      name.width(0);
-      if(mOutputFormat == ofTGA)
-        name << ".tga";
+      // Write slice image or genereate mesh triangles?
+      if(mOutputType == otSlices)
+      {
+        // Construct file name for the slice
+        stringstream name;
+        name << mOutputFileName;
+        name.fill('0');
+        name.width(5);
+        name << i;
+        name.width(0);
+        if(mOutputFormat == ofTGA)
+          name << ".tga";
 
-      // Write this file to disk
-      output->SetData(&voxelSlice[0]);
-      output->SetSliceNo(i);
-      output->SetSampleSpace(&space);
-      output->SaveToFile(name.str().c_str());
+        // Write this file to disk
+        imgOut->SetData(slice);
+        imgOut->SetSliceNo(i);
+        imgOut->SetSampleSpace(&space);
+        imgOut->SaveToFile(name.str().c_str());
+      }
+      else if(mOutputType == otMesh)
+      {
+        if(i > 0)
+          polygonize.AppendSlicePair(sliceOld, slice, i - 1);
+      }
+
+      // Swap slice buffers
+      Voxel * tmp = sliceOld;
+      sliceOld = slice;
+      slice = tmp;
     }
     dt = mTimer.PopDelta();
     cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
-    delete output;
-    output = 0;
+    if(imgOut)
+    {
+      delete imgOut;
+      imgOut = 0;
+    }
+
+    // Write mesh file
+    if(mOutputType == otMesh)
+    {
+      cout << "Writing mesh file..." << flush;
+      mTimer.Push();
+      Mesh mesh;
+      polygonize.ToMesh(mesh);
+      if(mOutputFormat == ofSTL)
+      {
+        STLMeshWriter meshWriter;
+        meshWriter.SetMesh(&mesh);
+        meshWriter.SaveToFile((mOutputFileName + string(".stl")).c_str());
+      }
+      else
+        throw runtime_error("Unsupported output format for meches.");
+      dt = mTimer.PopDelta();
+      cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
+    }
   }
   catch(...)
   {
-    if(output)
-      delete output;
+    if(imgOut)
+      delete imgOut;
     throw;
   }
 }
@@ -183,6 +231,8 @@ void CSGJob::LoadSettings(TiXmlNode * aNode)
         {
           if(s == string("slices"))
             mOutputType = otSlices;
+          else if(s == string("mesh"))
+            mOutputType = otMesh;
           else
             cout << "  Warning: Unrecognized output type: " << s << endl;
         }
@@ -193,6 +243,8 @@ void CSGJob::LoadSettings(TiXmlNode * aNode)
         {
           if(s == string("tga"))
             mOutputFormat = ofTGA;
+          else if(s == string("stl"))
+            mOutputFormat = ofSTL;
           else
             cout << "  Warning: Unrecognized output format: " << s << endl;
         }
