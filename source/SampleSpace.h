@@ -59,14 +59,14 @@ class SampleSpace {
     void DefineSpace(BoundingBox &aAABB, Vector3 aResolution);
 
     /// Define the sample space (uniform resolution).
-    inline void DefineSpace(BoundingBox &aAABB, double aResolution)
-    {
-      DefineSpace(aAABB, Vector3(aResolution, aResolution, aResolution));
-    }
+    void DefineSpace(BoundingBox &aAABB, double aResolution);
 
     BoundingBox mAABB; ///< Bonding box for the voxel space.
     int mDiv[3];       ///< Number of divisions of the voxel space (x, y, z).
 };
+
+// Quick slice filler function (like memset).
+void FillSlice(Voxel * aSlice, Voxel aValue, int aCount);
 
 }
 
