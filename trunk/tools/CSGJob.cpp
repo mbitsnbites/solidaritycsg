@@ -120,6 +120,7 @@ void CSGJob::Execute()
   {
     // Perform operation...
     cout << "Executing job..." << flush;
+    double polygonizeTime = 0;
     mTimer.Push();
     vector<Voxel> voxelSlice1, voxelSlice2;
     voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
@@ -152,8 +153,10 @@ void CSGJob::Execute()
       }
       else if(mOutputType == otMesh)
       {
+        mTimer.Push();
         if(i > 0)
           polygonize.AppendSlicePair(sliceOld, slice, i - 1);
+        polygonizeTime += mTimer.PopDelta();
       }
 
       // Swap slice buffers
@@ -162,7 +165,11 @@ void CSGJob::Execute()
       slice = tmp;
     }
     dt = mTimer.PopDelta();
-    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
+    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms";
+    if(polygonizeTime > 0.0)
+      cout << ", polygonize: "  << int(polygonizeTime * 1000.0 + 0.5) << " ms)" << endl;
+    else
+      cout << ")" << endl;
 
     if(imgOut)
     {
