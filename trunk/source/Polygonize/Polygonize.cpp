@@ -327,17 +327,15 @@ static int gTriTable[256][16] = {
 
 /// Linearly interpolate the position where an isosurface cuts an edge between
 /// two vertices, each with their own scalar value.
-static Vector3 VertexInterp(Voxel aLevel, Vector3 &p1, Vector3 &p2,
-  Voxel aValue1, Voxel aValue2)
+static Vector3 VertexInterp(Vector3 &p1, Vector3 &p2, Voxel aValue1, Voxel aValue2)
 {
   if(aValue1 == aValue2)
     return p1;
 
-   double t = (double(aLevel) - double(aValue1)) /
-              (double(aValue2) - double(aValue1));
-   return Vector3(p1.x + t * (p2.x - p1.x),
-                  p1.y + t * (p2.y - p1.y),
-                  p1.z + t * (p2.z - p1.z));
+  double t = -double(aValue1) / (double(aValue2) - double(aValue1));
+  return Vector3(p1.x + t * (p2.x - p1.x),
+                 p1.y + t * (p2.y - p1.y),
+                 p1.z + t * (p2.z - p1.z));
 }
 
 
@@ -356,71 +354,6 @@ class Cube {
 //------------------------------------------------------------------------------
 // Polygonize
 //------------------------------------------------------------------------------
-
-void Polygonize::PorcessOneCube(Cube &aCube, Voxel aLevel)
-{
-   // Determine the index into the edge table which tells us which vertices are
-   // inside of the surface
-   int cubeindex = 0;
-   if(aCube.mValue[0] < aLevel) cubeindex |= 1;
-   if(aCube.mValue[1] < aLevel) cubeindex |= 2;
-   if(aCube.mValue[2] < aLevel) cubeindex |= 4;
-   if(aCube.mValue[3] < aLevel) cubeindex |= 8;
-   if(aCube.mValue[4] < aLevel) cubeindex |= 16;
-   if(aCube.mValue[5] < aLevel) cubeindex |= 32;
-   if(aCube.mValue[6] < aLevel) cubeindex |= 64;
-   if(aCube.mValue[7] < aLevel) cubeindex |= 128;
-
-   // Cube is entirely in/out of the surface
-   if(gEdgeTable[cubeindex] == 0)
-      return;
-
-   // Find the vertices where the surface intersects the cube
-   Vector3 verts[12];
-   if(gEdgeTable[cubeindex] & 1)
-      verts[0] =
-         VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[1], aCube.mValue[0], aCube.mValue[1]);
-   if(gEdgeTable[cubeindex] & 2)
-      verts[1] =
-         VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[2], aCube.mValue[1], aCube.mValue[2]);
-   if(gEdgeTable[cubeindex] & 4)
-      verts[2] =
-         VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[3], aCube.mValue[2], aCube.mValue[3]);
-   if(gEdgeTable[cubeindex] & 8)
-      verts[3] =
-         VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[0], aCube.mValue[3], aCube.mValue[0]);
-   if(gEdgeTable[cubeindex] & 16)
-      verts[4] =
-         VertexInterp(aLevel, aCube.mPoint[4], aCube.mPoint[5], aCube.mValue[4], aCube.mValue[5]);
-   if(gEdgeTable[cubeindex] & 32)
-      verts[5] =
-         VertexInterp(aLevel, aCube.mPoint[5], aCube.mPoint[6], aCube.mValue[5], aCube.mValue[6]);
-   if(gEdgeTable[cubeindex] & 64)
-      verts[6] =
-         VertexInterp(aLevel, aCube.mPoint[6], aCube.mPoint[7], aCube.mValue[6], aCube.mValue[7]);
-   if(gEdgeTable[cubeindex] & 128)
-      verts[7] =
-         VertexInterp(aLevel, aCube.mPoint[7], aCube.mPoint[4], aCube.mValue[7], aCube.mValue[4]);
-   if(gEdgeTable[cubeindex] & 256)
-      verts[8] =
-         VertexInterp(aLevel, aCube.mPoint[0], aCube.mPoint[4], aCube.mValue[0], aCube.mValue[4]);
-   if(gEdgeTable[cubeindex] & 512)
-      verts[9] =
-         VertexInterp(aLevel, aCube.mPoint[1], aCube.mPoint[5], aCube.mValue[1], aCube.mValue[5]);
-   if(gEdgeTable[cubeindex] & 1024)
-      verts[10] =
-         VertexInterp(aLevel, aCube.mPoint[2], aCube.mPoint[6], aCube.mValue[2], aCube.mValue[6]);
-   if(gEdgeTable[cubeindex] & 2048)
-      verts[11] =
-         VertexInterp(aLevel, aCube.mPoint[3], aCube.mPoint[7], aCube.mValue[3], aCube.mValue[7]);
-
-   // Create the triangles
-   for(int i = 0; gTriTable[cubeindex][i] != -1; i += 3)
-     mTriBuf.Append(verts[gTriTable[cubeindex][i]],
-                    verts[gTriTable[cubeindex][i + 1]],
-                    verts[gTriTable[cubeindex][i + 2]]);
-}
-
 
 void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
 {
@@ -444,20 +377,6 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
 
       // Initialize cube information
       Cube c;
-      for(int i = 0; i < 8; ++ i)
-        c.mPoint[i] = p;
-      c.mPoint[1].x += voxelSize.x;
-      c.mPoint[2].x += voxelSize.x;
-      c.mPoint[5].x += voxelSize.x;
-      c.mPoint[6].x += voxelSize.x;
-      c.mPoint[2].y += voxelSize.y;
-      c.mPoint[3].y += voxelSize.y;
-      c.mPoint[6].y += voxelSize.y;
-      c.mPoint[7].y += voxelSize.y;
-      c.mPoint[4].z += voxelSize.z;
-      c.mPoint[5].z += voxelSize.z;
-      c.mPoint[6].z += voxelSize.z;
-      c.mPoint[7].z += voxelSize.z;
       c.mValue[0] = ptr1[0];
       c.mValue[1] = ptr1[1];
       c.mValue[2] = ptr1[mSampleSpace->mDiv[0] + 1];
@@ -467,8 +386,70 @@ void Polygonize::AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1)
       c.mValue[6] = ptr2[mSampleSpace->mDiv[0] + 1];
       c.mValue[7] = ptr2[mSampleSpace->mDiv[0]];
 
-      // Process the cube (produce triangles)
-      PorcessOneCube(c, 0);
+      // Determine the index into the edge table which tells us which vertices are
+      // inside of the surface
+      int cubeindex = 0;
+      if(c.mValue[0] < 0) cubeindex |= 1;
+      if(c.mValue[1] < 0) cubeindex |= 2;
+      if(c.mValue[2] < 0) cubeindex |= 4;
+      if(c.mValue[3] < 0) cubeindex |= 8;
+      if(c.mValue[4] < 0) cubeindex |= 16;
+      if(c.mValue[5] < 0) cubeindex |= 32;
+      if(c.mValue[6] < 0) cubeindex |= 64;
+      if(c.mValue[7] < 0) cubeindex |= 128;
+
+      // Is cube entirely in/out of the surface?
+      if(gEdgeTable[cubeindex] != 0)
+      {
+        // Cube coordinates
+        for(int i = 0; i < 8; ++ i)
+          c.mPoint[i] = p;
+        c.mPoint[1].x += voxelSize.x;
+        c.mPoint[2].x += voxelSize.x;
+        c.mPoint[5].x += voxelSize.x;
+        c.mPoint[6].x += voxelSize.x;
+        c.mPoint[2].y += voxelSize.y;
+        c.mPoint[3].y += voxelSize.y;
+        c.mPoint[6].y += voxelSize.y;
+        c.mPoint[7].y += voxelSize.y;
+        c.mPoint[4].z += voxelSize.z;
+        c.mPoint[5].z += voxelSize.z;
+        c.mPoint[6].z += voxelSize.z;
+        c.mPoint[7].z += voxelSize.z;
+
+        // Find the vertices where the surface intersects the cube
+        Vector3 verts[12];
+        if(gEdgeTable[cubeindex] & 1)
+          verts[0] = VertexInterp(c.mPoint[0], c.mPoint[1], c.mValue[0], c.mValue[1]);
+        if(gEdgeTable[cubeindex] & 2)
+          verts[1] = VertexInterp(c.mPoint[1], c.mPoint[2], c.mValue[1], c.mValue[2]);
+        if(gEdgeTable[cubeindex] & 4)
+          verts[2] = VertexInterp(c.mPoint[2], c.mPoint[3], c.mValue[2], c.mValue[3]);
+        if(gEdgeTable[cubeindex] & 8)
+          verts[3] = VertexInterp(c.mPoint[3], c.mPoint[0], c.mValue[3], c.mValue[0]);
+        if(gEdgeTable[cubeindex] & 16)
+          verts[4] = VertexInterp(c.mPoint[4], c.mPoint[5], c.mValue[4], c.mValue[5]);
+        if(gEdgeTable[cubeindex] & 32)
+          verts[5] = VertexInterp(c.mPoint[5], c.mPoint[6], c.mValue[5], c.mValue[6]);
+        if(gEdgeTable[cubeindex] & 64)
+          verts[6] = VertexInterp(c.mPoint[6], c.mPoint[7], c.mValue[6], c.mValue[7]);
+        if(gEdgeTable[cubeindex] & 128)
+          verts[7] = VertexInterp(c.mPoint[7], c.mPoint[4], c.mValue[7], c.mValue[4]);
+        if(gEdgeTable[cubeindex] & 256)
+          verts[8] = VertexInterp(c.mPoint[0], c.mPoint[4], c.mValue[0], c.mValue[4]);
+        if(gEdgeTable[cubeindex] & 512)
+          verts[9] = VertexInterp(c.mPoint[1], c.mPoint[5], c.mValue[1], c.mValue[5]);
+        if(gEdgeTable[cubeindex] & 1024)
+          verts[10] = VertexInterp(c.mPoint[2], c.mPoint[6], c.mValue[2], c.mValue[6]);
+        if(gEdgeTable[cubeindex] & 2048)
+          verts[11] = VertexInterp(c.mPoint[3], c.mPoint[7], c.mValue[3], c.mValue[7]);
+
+        // Create the triangles
+        for(int i = 0; gTriTable[cubeindex][i] != -1; i += 3)
+          mTriBuf.Append(verts[gTriTable[cubeindex][i]],
+                         verts[gTriTable[cubeindex][i + 1]],
+                         verts[gTriTable[cubeindex][i + 2]]);
+      }
 
       ++ ptr1;
       ++ ptr2;
