@@ -30,9 +30,9 @@ class SortVertex {
 
     bool operator<(const SortVertex &v) const
     {
-      return (mPoint.x < v.mPoint.x) ||
-             ((mPoint.x == v.mPoint.x) && ((mPoint.y < v.mPoint.y) ||
-              ((mPoint.y == v.mPoint.y) && (mPoint.z < v.mPoint.z))));
+      return (mPoint.z < v.mPoint.z) ||
+             ((mPoint.z == v.mPoint.z) && ((mPoint.y < v.mPoint.y) ||
+              ((mPoint.y == v.mPoint.y) && (mPoint.x < v.mPoint.x))));
     }
 };
 

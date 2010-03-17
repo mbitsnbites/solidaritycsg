@@ -69,12 +69,12 @@ class Vector3 {
 
     inline bool operator==(const Vector3 &v) const
     {
-      return (z == v.z) && (y == v.y) && (x == v.x);
+      return (x == v.x) && (y == v.y) && (z == v.z);
     }
 
     inline bool operator!=(const Vector3 &v) const
     {
-      return (z != v.z) || (y != v.y) || (x != v.x);
+      return (x != v.x) || (y != v.y) || (z != v.z);
     }
 
     inline double Abs()
