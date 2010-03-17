@@ -356,6 +356,16 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   Vector3 voxelSize = mSampleSpace->VoxelSize();
   double planeZ = aZ * voxelSize.z + mSampleSpace->mAABB.mMin.z;
 
+  // Completely outside?
+  if((planeZ < mHeightTree->mMinZ) || (planeZ > mHeightTree->mMaxZ))
+  {
+    Voxel * ptr = aSlice;
+    for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
+      for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+        *ptr ++ = -VOXEL_MAX;
+    return;
+  }
+
   // Start by marking all voxels of the slice as "UNVISITED"
   Voxel * ptr = aSlice;
   for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
@@ -628,7 +638,7 @@ void MeshVoxelize::DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2)
       ++ xInt;
     }
   }
-  else // if(false)
+  else
   {
     // Make sure that the step along the major axis is positive
     if(dy < 0.0)
