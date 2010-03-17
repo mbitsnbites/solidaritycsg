@@ -56,4 +56,16 @@ void SampleSpace::DefineSpace(BoundingBox &aAABB, Vector3 aResolution)
   mAABB.mMax = center + radius;
 }
 
+void SampleSpace::DefineSpace(BoundingBox &aAABB, double aResolution)
+{
+  DefineSpace(aAABB, Vector3(aResolution, aResolution, aResolution));
+}
+
+void FillSlice(Voxel * aSlice, Voxel aValue, int aCount)
+{
+  Voxel * ptr = aSlice;
+  for(int i = 0; i < aCount; ++ i)
+    *ptr ++ = aValue;
+}
+
 }

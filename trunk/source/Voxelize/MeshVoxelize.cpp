@@ -359,18 +359,12 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   // Completely outside?
   if((planeZ < mHeightTree->mMinZ) || (planeZ > mHeightTree->mMaxZ))
   {
-    Voxel * ptr = aSlice;
-    for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
-      for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
-        *ptr ++ = -VOXEL_MAX;
+    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
     return;
   }
 
   // Start by marking all voxels of the slice as "UNVISITED"
-  Voxel * ptr = aSlice;
-  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
-    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
-      *ptr ++ = VOXEL_UNVISITED;
+  FillSlice(aSlice, VOXEL_UNVISITED, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
 
   // Get all intersecting triangles
   list<Triangle *> triList;
@@ -385,7 +379,7 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   }
 
   // Determine in/out for all the visited voxels
-  ptr = aSlice;
+  Voxel * ptr = aSlice;
   for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
   {
     for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
