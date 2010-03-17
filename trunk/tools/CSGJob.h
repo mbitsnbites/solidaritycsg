@@ -41,12 +41,14 @@ class CSGJob {
   private:
     /// Output type enumerator.
     enum OutputType {
-      otSlices = 1
+      otSlices = 1,
+      otMesh = 2
     };
 
     /// Output format enumerator.
     enum OutputFormat {
-      ofTGA = 1
+      ofTGA = 1,
+      ofSTL = 2
     };
 
     /// Load the settings description from an XML document node.
