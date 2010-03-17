@@ -342,90 +342,6 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
   heightLeafNodes.clear();
 }
 
-void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
-{
-  // Check that the voxel space has been properly set up
-  if(!mSampleSpace || !mSampleSpace->IsValid())
-    throw runtime_error("Undefined/invalid voxel space dimensions.");
-
-  // Check that the mesh has been properly set up
-  if(!mRectTree || !mHeightTree)
-    throw runtime_error("Undefined triangle mesh.");
-
-  // Calculate the slice plane Z value
-  Vector3 voxelSize = mSampleSpace->VoxelSize();
-  double planeZ = aZ * voxelSize.z + mSampleSpace->mAABB.mMin.z;
-
-  // Completely outside?
-  if((planeZ < mHeightTree->mMinZ) || (planeZ > mHeightTree->mMaxZ))
-  {
-    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
-    return;
-  }
-
-  // Start by marking all voxels of the slice as "UNVISITED"
-  FillSlice(aSlice, VOXEL_UNVISITED, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
-
-  // Get all intersecting triangles
-  list<Triangle *> triList;
-  mHeightTree->IntersectingTriangles(planeZ, triList);
-
-  // Calculate and draw all intersections to the slice
-  for(list<Triangle *>::iterator t = triList.begin(); t != triList.end(); ++ t)
-  {
-    Vector3 p1, p2;
-    if((*t)->IntersectPlane(planeZ, &p1, &p2))
-      DrawLineSegment(aSlice, p1, p2);
-  }
-
-  // Determine in/out for all the visited voxels
-  Voxel * ptr = aSlice;
-  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
-  {
-    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
-    {
-      Voxel value = *ptr;
-      if(value != VOXEL_UNVISITED)
-      {
-        // Calculate voxel 3D coordinate
-        Vector3 p;
-        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
-        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
-        p.z = planeZ;
-
-        // Point outside? If so, flip sign...
-        if(!mRectTree->PointInside(p))
-          *ptr = -value;
-      }
-      ++ ptr;
-    }
-  }
-
-  // Flood fill the unvisited parts of the slice according to in/out
-  ptr = aSlice;
-  for(int y = 0; y < mSampleSpace->mDiv[1]; ++ y)
-  {
-    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
-    {
-      if(*ptr == VOXEL_UNVISITED)
-      {
-        // Calculate voxel 3D coordinate
-        Vector3 p;
-        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
-        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
-        p.z = planeZ;
-
-        // Check if the voxel is inside or outside of the triangle mesh
-        Voxel value = mRectTree->PointInside(p) ? VOXEL_MAX : -VOXEL_MAX;
-
-        // Flood fill from this voxel
-        FloodFill(aSlice, x, y, value);
-      }
-      ++ ptr;
-    }
-  }
-}
-
 XYTreeNode * MeshVoxelize::BuildRectangleTree(vector<XYTreeNode *> &aNodes,
   unsigned int aStart, unsigned int aEnd)
 {
@@ -526,6 +442,157 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes,
 
   // Create a new node, based on the A & B children
   return new ZTreeNode(childA, childB);
+}
+
+void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+{
+  // Check that the voxel space has been properly set up
+  if(!mSampleSpace || !mSampleSpace->IsValid())
+    throw runtime_error("Undefined/invalid voxel space dimensions.");
+
+  // Check that the mesh has been properly set up
+  if(!mRectTree || !mHeightTree)
+    throw runtime_error("Undefined triangle mesh.");
+
+  // Calculate the slice plane Z value
+  Vector3 voxelSize = mSampleSpace->VoxelSize();
+  double planeZ = aZ * voxelSize.z + mSampleSpace->mAABB.mMin.z;
+
+  // Get all intersecting triangles
+  list<Triangle *> triList;
+  mHeightTree->IntersectingTriangles(planeZ, triList);
+
+  // Keep track of the bounding rectangle for the intersection in this slice
+  double min[2], max[2];
+  min[0] = mSampleSpace->mAABB.mMax.x + 4.0 * voxelSize.x;
+  min[1] = mSampleSpace->mAABB.mMax.y + 4.0 * voxelSize.y;
+  max[0] = mSampleSpace->mAABB.mMin.x - 4.0 * voxelSize.x;
+  max[1] = mSampleSpace->mAABB.mMin.y - 4.0 * voxelSize.y;
+
+  // Calculate all intersections with the slice, and get the bounding rectangle
+  // of the intersection
+  vector<Vector3> intersections(triList.size() * 2);
+  int count = 0;
+  Vector3 * vPtr = &intersections[0];
+  for(list<Triangle *>::iterator t = triList.begin(); t != triList.end(); ++ t)
+  {
+    if((*t)->IntersectPlane(planeZ, &vPtr[0], &vPtr[1]))
+    {
+      for(int i = 0; i < 2; ++ i)
+      {
+        if(vPtr[i].x < min[0])
+          min[0] = vPtr[i].x;
+        if(vPtr[i].y < min[1])
+          min[1] = vPtr[i].y;
+        if(vPtr[i].x > max[0])
+          max[0] = vPtr[i].x;
+        if(vPtr[i].y > max[1])
+          max[1] = vPtr[i].y;
+      }
+      vPtr += 2;
+      ++ count;
+    }
+  }
+
+  // Convert bounding rectangle to voxel indices
+  int first[2], last[2];
+  first[0] = int((min[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) - 2;
+  first[1] = int((min[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) - 2;
+  last[0] = int((max[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) + 2;
+  last[1] = int((max[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) + 2;
+
+  // Does the mesh volume miss this slice completely?
+  if((count == 0) || (last[0] < 0) || (last[1] < 0) ||
+     (first[0] >= mSampleSpace->mDiv[0]) ||
+     (first[1] >= mSampleSpace->mDiv[1]))
+  {
+    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+    return;
+  }
+
+  // Clamp first/last indices of the bounding rectangle
+  if(first[0] < 0)
+    first[0] = 0;
+  if(first[1] < 0)
+    first[1] = 0;
+  if(last[0] >= mSampleSpace->mDiv[0])
+    last[0] = mSampleSpace->mDiv[0] - 1;
+  if(last[1] >= mSampleSpace->mDiv[1])
+    last[1] = mSampleSpace->mDiv[1] - 1;
+
+  // Mark all voxels inside the intersection bounding rectangle as "UNVISITED",
+  // and all voxels outside of the intersection bounding rectangle as "outside".
+  Voxel * ptr = aSlice;
+  for(int y = 0; y < first[1]; ++ y)
+  {
+    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+      *ptr ++ = -VOXEL_MAX;
+  }
+  for(int y = first[1]; y <= last[1]; ++ y)
+  {
+    for(int x = 0; x < first[0]; ++ x)
+      *ptr ++ = -VOXEL_MAX;
+    for(int x = first[0]; x <= last[0]; ++ x)
+      *ptr ++ = VOXEL_UNVISITED;
+    for(int x = last[0] + 1; x < mSampleSpace->mDiv[0]; ++ x)
+      *ptr ++ = -VOXEL_MAX;
+  }
+  for(int y = last[1] + 1; y < mSampleSpace->mDiv[1]; ++ y)
+  {
+    for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
+      *ptr ++ = -VOXEL_MAX;
+  }
+
+  // Draw all intersecting triangles as line segments to the slice
+  for(int i = 0; i < count; ++ i)
+    DrawLineSegment(aSlice, intersections[i * 2], intersections[i * 2 + 1]);
+
+  // Determine in/out for all the visited (=drawn) voxels
+  for(int y = first[1]; y <= last[1]; ++ y)
+  {
+    ptr = &aSlice[y * mSampleSpace->mDiv[0] + first[0]];
+    for(int x = first[0]; x <= last[0]; ++ x)
+    {
+      Voxel value = *ptr;
+      if(value != VOXEL_UNVISITED)
+      {
+        // Calculate voxel 3D coordinate
+        Vector3 p;
+        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
+        p.z = planeZ;
+
+        // Point outside? If so, flip sign...
+        if(!mRectTree->PointInside(p))
+          *ptr = -value;
+      }
+      ++ ptr;
+    }
+  }
+
+  // Flood fill the unvisited parts of the slice according to in/out
+  for(int y = first[1]; y <= last[1]; ++ y)
+  {
+    ptr = &aSlice[y * mSampleSpace->mDiv[0] + first[0]];
+    for(int x = first[0]; x <= last[0]; ++ x)
+    {
+      if(*ptr == VOXEL_UNVISITED)
+      {
+        // Calculate voxel 3D coordinate
+        Vector3 p;
+        p.x = x * voxelSize.x + mSampleSpace->mAABB.mMin.x;
+        p.y = y * voxelSize.y + mSampleSpace->mAABB.mMin.y;
+        p.z = planeZ;
+
+        // Check if the voxel is inside or outside of the triangle mesh
+        Voxel value = mRectTree->PointInside(p) ? VOXEL_MAX : -VOXEL_MAX;
+
+        // Flood fill from this voxel
+        FloodFill(aSlice, x, y, value);
+      }
+      ++ ptr;
+    }
+  }
 }
 
 /// Helper funciton for updating the voxel values (used by DrawLineSegment).
