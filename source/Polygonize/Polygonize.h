@@ -48,9 +48,6 @@ class Polygonize {
     void ToMesh(Mesh &aMesh);
 
   private:
-    /// Process a single cube, and append the result to the mesh.
-    void PorcessOneCube(Cube &aCube, Voxel aLevel);
-
     /// Voxel sample space definition.
     SampleSpace * mSampleSpace;
 
