@@ -26,6 +26,8 @@
 
 namespace csg {
 
+/// Triangle buffer bin class. A bin object is a single chunk of data, part of
+/// the total data buffer in a TriBuf object.
 class TriBufBin {
   public:
     /// Constructor.
