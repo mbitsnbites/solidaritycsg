@@ -38,8 +38,9 @@ class CSGNode {
     /// Return the composite bounding box for this node (and all its children).
     virtual void GetBoundingBox(BoundingBox &aAABB) = 0;
 
-    /// Calculate the composite slice for this node.
-    virtual void ComposeSlice(Voxel * aSlice, int aZ) = 0;
+    /// Calculate the composite slice for this node. The function returns false
+    /// if all elements were cosidered "outside" (i.e. the slice is empty).
+    virtual bool ComposeSlice(Voxel * aSlice, int aZ) = 0;
 };
 
 /// Parent class for composite CSG nodes (e.g. union and intersection).
@@ -69,8 +70,9 @@ class CSGUnion : public CSGCompositeNode {
     /// Return the composite bounding box for this node (and all its children).
     virtual void GetBoundingBox(BoundingBox &aAABB);
 
-    /// Calculate the composite slice for this node.
-    virtual void ComposeSlice(Voxel * aSlice, int aZ);
+    /// Calculate the composite slice for this node. The function returns false
+    /// if all elements were cosidered "outside" (i.e. the slice is empty).
+    virtual bool ComposeSlice(Voxel * aSlice, int aZ);
 };
 
 /// Intersection CSG tree node class.
@@ -79,8 +81,9 @@ class CSGIntersection : public CSGCompositeNode {
     /// Return the composite bounding box for this node (and all its children).
     virtual void GetBoundingBox(BoundingBox &aAABB);
 
-    /// Calculate the composite slice for this node.
-    virtual void ComposeSlice(Voxel * aSlice, int aZ);
+    /// Calculate the composite slice for this node. The function returns false
+    /// if all elements were cosidered "outside" (i.e. the slice is empty).
+    virtual bool ComposeSlice(Voxel * aSlice, int aZ);
 };
 
 /// Difference CSG tree node class.
@@ -89,8 +92,9 @@ class CSGDifference : public CSGCompositeNode {
     /// Return the composite bounding box for this node (and all its children).
     virtual void GetBoundingBox(BoundingBox &aAABB);
 
-    /// Calculate the composite slice for this node.
-    virtual void ComposeSlice(Voxel * aSlice, int aZ);
+    /// Calculate the composite slice for this node. The function returns false
+    /// if all elements were cosidered "outside" (i.e. the slice is empty).
+    virtual bool ComposeSlice(Voxel * aSlice, int aZ);
 };
 
 /// Shape CSG tree node class (leaf node).
@@ -114,8 +118,9 @@ class CSGShape : public CSGNode {
     /// Return the bounding box for this node.
     virtual void GetBoundingBox(BoundingBox &aAABB);
 
-    /// Calculate the slice for this node.
-    virtual void ComposeSlice(Voxel * aSlice, int aZ);
+    /// Calculate the slice for this node. The function returns false if all
+    /// elements were cosidered "outside" (i.e. the slice is empty).
+    virtual bool ComposeSlice(Voxel * aSlice, int aZ);
 
   private:
     Voxelize * mVoxelize;  ///< Definition of the shape.

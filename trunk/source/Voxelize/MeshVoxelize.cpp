@@ -444,7 +444,7 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes,
   return new ZTreeNode(childA, childB);
 }
 
-void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -507,7 +507,7 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
      (first[1] >= mSampleSpace->mDiv[1]))
   {
     FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
-    return;
+    return false;
   }
 
   // Clamp first/last indices of the bounding rectangle
@@ -593,6 +593,8 @@ void MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
       ++ ptr;
     }
   }
+
+  return true;
 }
 
 /// Helper funciton for updating the voxel values (used by DrawLineSegment).
