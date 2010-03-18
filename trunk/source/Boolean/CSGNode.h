@@ -60,7 +60,7 @@ class CSGCompositeNode : public CSGNode {
 
   protected:
     std::list<CSGNode *> mChildren;  ///< List of child nodes.
-    std::vector<Voxel> mTmpSlice;    ///< Intermediate slice (single child node).
+    SampleSpace * mSampleSpace;      ///< Reference to the SampleSpace object.
 };
 
 /// Union CSG tree node class.

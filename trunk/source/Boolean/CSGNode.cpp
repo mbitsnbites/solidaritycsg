@@ -17,6 +17,7 @@
 
 #include <stdexcept>
 #include "CSGNode.h"
+#include "../Array.h"
 
 using namespace std;
 
@@ -45,8 +46,8 @@ void CSGCompositeNode::SetSampleSpace(SampleSpace * aSampleSpace)
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
     (*i)->SetSampleSpace(aSampleSpace);
 
-  // Allocate memory for intermediate slice
-  mTmpSlice.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
+  // Keep a reference to the SampleSpace object
+  mSampleSpace = aSampleSpace;
 }
 
 
@@ -85,15 +86,16 @@ void CSGUnion::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
   list<CSGNode *>::iterator i;
+  Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
       (*i)->ComposeSlice(aSlice, aZ);
     else
     {
-      (*i)->ComposeSlice(&mTmpSlice[0], aZ);
-      for(unsigned int k = 0; k < mTmpSlice.size(); ++ k)
-        aSlice[k] = MAX(aSlice[k], mTmpSlice[k]);
+      (*i)->ComposeSlice(&tmpSlice[0], aZ);
+      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+        aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
     }
     first = false;
   }
@@ -135,15 +137,16 @@ void CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
   list<CSGNode *>::iterator i;
+  Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
       (*i)->ComposeSlice(aSlice, aZ);
     else
     {
-      (*i)->ComposeSlice(&mTmpSlice[0], aZ);
-      for(unsigned int k = 0; k < mTmpSlice.size(); ++ k)
-        aSlice[k] = MIN(aSlice[k], mTmpSlice[k]);
+      (*i)->ComposeSlice(&tmpSlice[0], aZ);
+      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+        aSlice[k] = MIN(aSlice[k], tmpSlice[k]);
     }
     first = false;
   }
@@ -170,15 +173,16 @@ void CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
   list<CSGNode *>::iterator i;
+  Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
       (*i)->ComposeSlice(aSlice, aZ);
     else
     {
-      (*i)->ComposeSlice(&mTmpSlice[0], aZ);
-      for(unsigned int k = 0; k < mTmpSlice.size(); ++ k)
-        aSlice[k] = MIN(aSlice[k], -mTmpSlice[k]);
+      (*i)->ComposeSlice(&tmpSlice[0], aZ);
+      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+        aSlice[k] = MIN(aSlice[k], -tmpSlice[k]);
     }
     first = false;
   }
