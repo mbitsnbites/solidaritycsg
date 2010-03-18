@@ -15,16 +15,29 @@
 # along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------------------
 
+# A simple hack to check if we are on Windows or not (i.e. are we using mingw32-make?)
+ifeq ($(findstring mingw32, $(MAKE)), mingw32)
+WINDOWS=1
+endif
+
+# Compiler settings
 CPP = g++
 CPPFLAGS = -O3 -W -Wall -c
 LIB = ar
 LIBFLAGS = -rcs
 DEPEND = g++ -MM
-#RM = del /Q
-RM = rm -f
 
+# Misc. system commands
+ifdef WINDOWS
+RM = del /Q
+else
+RM = rm -f
+endif
+
+# Name of the static library
 STATICLIB = libsolidaritycsg.a
 
+# Library object files
 OBJS = BoxVoxelize.o \
        SphereVoxelize.o \
        MeshVoxelize.o \
@@ -39,6 +52,7 @@ OBJS = BoxVoxelize.o \
        BoundingBox.o \
        Vector3.o
 
+# Library source files
 SRCS = Voxelize/BoxVoxelize.cpp \
        Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \

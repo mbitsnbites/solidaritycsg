@@ -15,6 +15,11 @@
 # along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------------------
 
+# A simple hack to check if we are on Windows or not (i.e. are we using mingw32-make?)
+ifeq ($(findstring mingw32, $(MAKE)), mingw32)
+WINDOWS=1
+endif
+
 # Main program compiler settings
 CPP = g++
 CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML
@@ -25,12 +30,18 @@ LIBS = -lsolidaritycsg
 TINYCPPFLAGS = -O2 -W -c -I./TinyXML
 
 # Misc. system commands
-#RM = del /Q
+ifdef WINDOWS
+RM = del /Q
+else
 RM = rm -f
+endif
 
 # For Windows - set this to .exe, otherwise leave it empty
-#EXE = .exe
+ifdef WINDOWS
+EXE = .exe
+else
 EXE =
+endif
 
 # CSG program object files
 CSGOBJS = csg.o \
