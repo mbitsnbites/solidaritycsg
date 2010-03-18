@@ -188,9 +188,11 @@ class MeshVoxelize : public Voxelize {
     /// called.
     void SetTriangles(Mesh &aMesh);
 
-    /// Calculate a single slice of the voxel volume.
-    /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
-    virtual void CalculateSlice(Voxel * aSlice, int aZ);
+    /// Calculate a single slice of the voxel volume. The slice must be
+    /// allocated by the caller, and hold DivX * DivY voxels. The function
+    /// returns false if all elements were cosidered "outside" (i.e. the slice
+    /// is empty).
+    virtual bool CalculateSlice(Voxel * aSlice, int aZ);
 
   private:
     /// Build the 2D bounding rectangle tree (XY).

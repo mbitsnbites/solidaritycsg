@@ -34,9 +34,11 @@ class SphereVoxelize : public Voxelize {
     /// Define the sphere to be voxelized.
     void SetSphere(Vector3 aCenter, double aRadius);
 
-    /// Calculate a single slice of the voxel volume.
-    /// The slice must be allocated by the caller, and hold DivX * DivY voxels.
-    virtual void CalculateSlice(Voxel * aSlice, int aZ);
+    /// Calculate a single slice of the voxel volume. The slice must be
+    /// allocated by the caller, and hold DivX * DivY voxels. The function
+    /// returns false if all elements were cosidered "outside" (i.e. the slice
+    /// is empty).
+    virtual bool CalculateSlice(Voxel * aSlice, int aZ);
 
   private:
     Vector3 mCenter; ///< Sphere center.

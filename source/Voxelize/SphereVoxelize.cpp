@@ -38,7 +38,7 @@ void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius)
   mAABB.mMax = mCenter + r;
 }
 
-void SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -76,6 +76,8 @@ void SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
       *vPtr ++ = v;
     }
   }
+
+  return true;
 }
 
 }

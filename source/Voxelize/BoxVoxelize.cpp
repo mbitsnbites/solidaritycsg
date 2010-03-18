@@ -37,7 +37,7 @@ void BoxVoxelize::SetBox(Vector3 aCenter, Vector3 aSides)
   mAABB.mMax = mCenter + mSides * 0.5;
 }
 
-void BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -123,6 +123,8 @@ void BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
       *vPtr ++ = v;
     }
   }
+
+  return true;
 }
 
 }

@@ -82,23 +82,33 @@ void CSGUnion::GetBoundingBox(BoundingBox &aAABB)
   }
 }
 
-void CSGUnion::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGUnion::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
+  bool anyInside = false;
   list<CSGNode *>::iterator i;
   Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
-      (*i)->ComposeSlice(aSlice, aZ);
+      anyInside = (*i)->ComposeSlice(aSlice, aZ);
     else
     {
-      (*i)->ComposeSlice(&tmpSlice[0], aZ);
-      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-        aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
+      if(!anyInside)
+        anyInside = (*i)->ComposeSlice(aSlice, aZ);
+      else
+      {
+        if((*i)->ComposeSlice(&tmpSlice[0], aZ))
+        {
+          for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+            aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
+        }
+      }
     }
     first = false;
   }
+
+  return anyInside;
 }
 
 
@@ -133,7 +143,7 @@ void CSGIntersection::GetBoundingBox(BoundingBox &aAABB)
   }
 }
 
-void CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
   list<CSGNode *>::iterator i;
@@ -141,15 +151,24 @@ void CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
-      (*i)->ComposeSlice(aSlice, aZ);
+    {
+      if(!(*i)->ComposeSlice(aSlice, aZ))
+        return false;
+    }
     else
     {
-      (*i)->ComposeSlice(&tmpSlice[0], aZ);
+      if(!(*i)->ComposeSlice(&tmpSlice[0], aZ))
+      {
+        FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+        return false;
+      }
       for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
         aSlice[k] = MIN(aSlice[k], tmpSlice[k]);
     }
     first = false;
   }
+
+  return true;
 }
 
 
@@ -169,7 +188,7 @@ void CSGDifference::GetBoundingBox(BoundingBox &aAABB)
   (*mChildren.begin())->GetBoundingBox(aAABB);
 }
 
-void CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
   list<CSGNode *>::iterator i;
@@ -177,15 +196,22 @@ void CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
-      (*i)->ComposeSlice(aSlice, aZ);
+    {
+      if(!(*i)->ComposeSlice(aSlice, aZ))
+        return false;
+    }
     else
     {
-      (*i)->ComposeSlice(&tmpSlice[0], aZ);
-      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-        aSlice[k] = MIN(aSlice[k], -tmpSlice[k]);
+      if((*i)->ComposeSlice(&tmpSlice[0], aZ))
+      {
+        for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+          aSlice[k] = MIN(aSlice[k], -tmpSlice[k]);
+      }
     }
     first = false;
   }
+
+  return true;
 }
 
 
@@ -223,13 +249,13 @@ void CSGShape::GetBoundingBox(BoundingBox &aAABB)
   mVoxelize->GetBoundingBox(aAABB);
 }
 
-void CSGShape::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGShape::ComposeSlice(Voxel * aSlice, int aZ)
 {
   if(!mVoxelize)
     throw runtime_error("No shape defined.");
 
   // Calculate the slice
-  mVoxelize->CalculateSlice(aSlice, aZ);
+  return mVoxelize->CalculateSlice(aSlice, aZ);
 }
 
 }
