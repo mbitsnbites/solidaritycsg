@@ -10,7 +10,7 @@ MeshVoxelize.o: Voxelize/MeshVoxelize.cpp Voxelize/MeshVoxelize.h \
   Voxelize/Voxelize.h Voxelize/../Vector3.h Voxelize/../BoundingBox.h \
   Voxelize/../Vector3.h Voxelize/../SampleSpace.h \
   Voxelize/../BoundingBox.h Voxelize/../FileIO/Mesh.h \
-  Voxelize/../FileIO/../Vector3.h
+  Voxelize/../FileIO/../Vector3.h Voxelize/../Array.h
 TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
   FileIO/ImageWriter.h FileIO/../Voxelize/Voxelize.h \
   FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../BoundingBox.h \
