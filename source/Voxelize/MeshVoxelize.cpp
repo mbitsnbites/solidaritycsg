@@ -17,6 +17,7 @@
 
 #include "MeshVoxelize.h"
 #include "../FileIO/Mesh.h"
+#include "../Array.h"
 #include <stdexcept>
 
 using namespace std;
@@ -471,7 +472,7 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
 
   // Calculate all intersections with the slice, and get the bounding rectangle
   // of the intersection
-  vector<Vector3> intersections(triList.size() * 2);
+  Array<Vector3> intersections(triList.size() * 2);
   int count = 0;
   Vector3 * vPtr = &intersections[0];
   for(list<Triangle *>::iterator t = triList.begin(); t != triList.end(); ++ t)
