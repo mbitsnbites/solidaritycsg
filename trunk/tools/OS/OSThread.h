@@ -161,8 +161,12 @@ class condition_variable {
 /// Thread class.
 class thread {
   public:
-    /// Constructor.
-    template <class F> explicit thread(F f);
+    /// Constructor. This version is not fully compatible with the standard C++
+    /// thread class, but does its job.
+    /// \param aFunction A function pointer to a function of type:
+    ///                  void fun(void * arg)
+    /// \param aArg Argument to the thread function.
+    thread(void (*aFunction)(void *), void * aArg);
 
     /// Destructor.
     ~thread()
@@ -184,7 +188,16 @@ class thread {
 #endif
     }
 
+    /// This method is a wrapper function that is called from within the
+    /// newly created thread (do not call).
+    void _execute()
+    {
+      mFunction(mArg);
+    }
+
   private:
+    void (*mFunction)(void *); ///< Pointer to the function to be executed.
+    void * mArg;               ///< Function argument for the thread function.
 #ifdef WIN32
     HANDLE mThread;
     DWORD mThreadID;

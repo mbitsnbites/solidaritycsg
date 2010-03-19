@@ -58,14 +58,14 @@ class CSGSlice {
       return mID;
     }
 
-    inline bool Done()
+    inline bool IsDone()
     {
       return mDone;
     }
 
-    inline void Done(bool aDone)
+    inline void Done()
     {
-      mDone = aDone;
+      mDone = true;
     }
 
   private:
@@ -156,7 +156,7 @@ class CSGSlicePool {
       }
 
       // Now, wait for the slice to be done (processed)
-      while(!result->Done())
+      while(!result->IsDone())
         mCondition.wait(mMutex);
 
       // Remove the slice from the list
