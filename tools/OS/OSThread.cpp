@@ -15,7 +15,10 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdexcept>
 #include "OSThread.h"
+
+using namespace std;
 
 namespace os {
 
@@ -115,5 +118,41 @@ void condition_variable::notify_all()
     SetEvent(mEvents[_CONDITION_EVENT_ALL]);
 }
 #endif
+
+//------------------------------------------------------------------------------
+// thread
+//------------------------------------------------------------------------------
+
+// Thread wrapper function.
+#ifdef WIN32
+DWORD WINAPI _threadWrapper(LPVOID aArg)
+#else
+void * _threadWrapper(void * aArg)
+#endif
+{
+  thread * t = (thread *) aArg;
+  // FIXME
+  return 0;
+}
+
+template <class F> thread::thread(F f)
+{
+#ifdef WIN32
+  // Create the thread
+  mThread = CreateThread(
+              (LPSECURITY_ATTRIBUTES) 0,
+              0,
+              _threadWrapper,
+              (LPVOID) this,
+              0,
+              &mThreadID
+            );
+
+  if(!mThread)
+    throw runtime_error("Unable to create thread.");
+#else
+  pthread_create(&mThread, NULL, _threadWrapper, (void *) this);
+#endif
+}
 
 }

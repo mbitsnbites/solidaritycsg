@@ -158,6 +158,41 @@ class condition_variable {
 #endif
 };
 
+/// Thread class.
+class thread {
+  public:
+    /// Constructor.
+    template <class F> explicit thread(F f);
+
+    /// Destructor.
+    ~thread()
+    {
+#ifdef WIN32
+      CloseHandle(mThread);
+#else
+      // FIXME
+#endif
+    }
+
+    /// Wait for the thread to finish (join execution flows).
+    inline void join()
+    {
+#ifdef WIN32
+      WaitForSingleObject(mThread, INFINITE);
+#else
+      pthread_join(&mThread);
+#endif
+    }
+
+  private:
+#ifdef WIN32
+  HANDLE mThread;
+  DWORD mThreadID;
+#else
+  pthread_t mThread;
+#endif
+};
+
 }
 
 #endif // _OSTHREAD_H_
