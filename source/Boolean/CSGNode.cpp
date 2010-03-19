@@ -85,30 +85,23 @@ void CSGUnion::GetBoundingBox(BoundingBox &aAABB)
 bool CSGUnion::ComposeSlice(Voxel * aSlice, int aZ)
 {
   bool first = true;
-  bool anyInside = false;
   list<CSGNode *>::iterator i;
   Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
-      anyInside = (*i)->ComposeSlice(aSlice, aZ);
+      first = !(*i)->ComposeSlice(aSlice, aZ);
     else
     {
-      if(!anyInside)
-        anyInside = (*i)->ComposeSlice(aSlice, aZ);
-      else
+      if((*i)->ComposeSlice(&tmpSlice[0], aZ))
       {
-        if((*i)->ComposeSlice(&tmpSlice[0], aZ))
-        {
-          for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-            aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
-        }
+        for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
+          aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
       }
     }
-    first = false;
   }
 
-  return anyInside;
+  return !first;
 }
 
 
