@@ -134,7 +134,7 @@ class condition_variable {
 #else
     inline void notify_one()
     {
-      pthread_signal(&mCondition);
+      pthread_cond_signal(&mCondition);
     }
 #endif
 
@@ -144,7 +144,7 @@ class condition_variable {
 #else
     inline void notify_all()
     {
-      pthread_broadcast(&mCondition);
+      pthread_cond_broadcast(&mCondition);
     }
 #endif
 
@@ -180,16 +180,16 @@ class thread {
 #ifdef WIN32
       WaitForSingleObject(mThread, INFINITE);
 #else
-      pthread_join(&mThread);
+      pthread_join(mThread, NULL);
 #endif
     }
 
   private:
 #ifdef WIN32
-  HANDLE mThread;
-  DWORD mThreadID;
+    HANDLE mThread;
+    DWORD mThreadID;
 #else
-  pthread_t mThread;
+    pthread_t mThread;
 #endif
 };
 
