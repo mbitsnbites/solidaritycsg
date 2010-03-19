@@ -20,21 +20,16 @@ ifeq ($(findstring mingw32, $(MAKE)), mingw32)
 WINDOWS=1
 endif
 
-# Do we have a recent version of g++?
-ifeq ($(findstring 4.5.,$(shell g++ -dumpversion)), 4.5.)
-GCC45=1
-endif
-
 # MinGW32 4.5 linking issue...
 ifdef WINDOWS
-ifdef GCC45
+ifeq ($(findstring 4.5.,$(shell g++ -dumpversion)), 4.5.)
 LFLAGS_EXTRA = -static-libstdc++
 endif
 endif
 
-# Enable C++0x features (e.g. threads)?
-ifdef GCC45
-CPPFLAGS_EXTRA = -std=c++0x -DUSE_STD_THREAD
+# Non-windwos systems need pthread
+ifndef WINDOWS
+LFLAGS_EXTRA = -lpthread
 endif
 
 # Main program compiler settings
@@ -63,7 +58,8 @@ endif
 # CSG program object files
 CSGOBJS = csg.o \
           CSGJob.o \
-          OSTime.o
+          OSTime.o \
+          OSThread.o
 
 # Demo program object files
 DEMOOBJS = demo.o
@@ -97,5 +93,6 @@ demo$(EXE): $(DEMOOBJS)
 # Dependencies
 demo.o: demo.cpp
 csg.o: csg.cpp CSGJob.h
-CSGJob.o: CSGJob.cpp CSGJob.h OS/OSTime.h
+CSGJob.o: CSGJob.cpp CSGJob.h OS/OSTime.h OS/OSThread.h
 OSTime.o: OS/OSTime.cpp OS/OSTime.h
+OSThread.o: OS/OSThread.cpp OS/OSThread.h

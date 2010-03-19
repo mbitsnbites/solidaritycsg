@@ -21,12 +21,159 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include "OS/OSThread.h"
 #include "CSGJob.h"
 
 
 using namespace csg;
 using namespace std;
 using namespace os;
+
+
+//------------------------------------------------------------------------------
+// CSGSlice
+//------------------------------------------------------------------------------
+
+class CSGSlice {
+  public:
+    CSGSlice(int aSize, int aID)
+    {
+      mData = new Voxel[aSize];
+      mID = aID;
+      mDone = false;
+    }
+
+    ~CSGSlice()
+    {
+      delete[] mData;
+    }
+
+    inline Voxel * Data()
+    {
+      return mData;
+    }
+
+    inline int ID()
+    {
+      return mID;
+    }
+
+    inline bool Done()
+    {
+      return mDone;
+    }
+
+    inline void Done(bool aDone)
+    {
+      mDone = aDone;
+    }
+
+  private:
+    Voxel * mData; ///< Slice data.
+    int mID;       ///< Slice ID.
+    bool mDone;    ///< Flag: true if the slice has been calculated.
+};
+
+
+//------------------------------------------------------------------------------
+// CSGSlicePool
+//------------------------------------------------------------------------------
+
+class CSGSlicePool {
+  public:
+    CSGSlicePool()
+    {
+      mNextID = 0;
+      mSampleSpace = 0;
+    }
+
+    ~CSGSlicePool()
+    {
+      // If there are any slices left in the list, delete them now
+      list<CSGSlice *>::iterator it;
+      for(it = mSlices.begin(); it != mSlices.end(); ++ it)
+        delete[] (CSGSlice *) *it;
+    }
+
+    /// Define the sample space to use.
+    inline void SetSampleSpace(SampleSpace * aSampleSpace)
+    {
+      mSampleSpace = aSampleSpace;
+    }
+
+    /// Create a new slice and put it in the pool.
+    CSGSlice * NewSlice()
+    {
+      if(!mSampleSpace)
+        throw runtime_error("SampleSpace object undefined.");
+
+      CSGSlice * result = 0;
+      mMutex.lock();
+      if(mNextID < mSampleSpace->mDiv[2])
+      {
+        int count = mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1];
+        result = new CSGSlice(count, mNextID);
+        mSlices.push_back(result);
+        ++ mNextID;
+      }
+      mMutex.unlock();
+      return result;
+    }
+
+    /// Signal that the slice is done.
+    void SliceDone(CSGSlice * aSlice)
+    {
+      mMutex.lock();
+      aSlice->Done();
+      mMutex.unlock();
+      mCondition.notify_all();
+    }
+
+    /// Get a specific slice. The slice is removed from the list (NOTE: The
+    /// caller is respondible for freeing the slice). This call is blocking,
+    /// until the corresponding slice is ready.
+    CSGSlice * GetSlice(int aID)
+    {
+      mMutex.lock();
+
+      // Start by finding the slice (wait until it is in the queue)
+      CSGSlice * result = 0;
+      list<CSGSlice *>::iterator it;
+      while(!result)
+      {
+        for(it = mSlices.begin(); it != mSlices.end(); ++ it)
+        {
+          if((*it)->ID() == aID)
+          {
+            result = *it;
+            break;
+          }
+        }
+
+        // It was not in the queue - wait for the queue to be updated
+        if(!result)
+          mCondition.wait(mMutex);
+      }
+
+      // Now, wait for the slice to be done (processed)
+      while(!result->Done())
+        mCondition.wait(mMutex);
+
+      // Remove the slice from the list
+      mSlices.erase(it);
+
+      mMutex.unlock();
+
+      return result;
+    }
+
+  private:
+    mutex mMutex;
+    condition_variable mCondition;
+    int mNextID;
+    SampleSpace * mSampleSpace;
+    list<CSGSlice *> mSlices;
+};
 
 
 //------------------------------------------------------------------------------
