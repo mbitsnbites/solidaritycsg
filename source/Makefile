@@ -22,7 +22,7 @@ endif
 
 # Compiler settings
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c
+CPPFLAGS = -O3 -W -Wall -c -funroll-loops
 LIB = ar
 LIBFLAGS = -rcs
 DEPEND = g++ -MM
