@@ -20,10 +20,27 @@ ifeq ($(findstring mingw32, $(MAKE)), mingw32)
 WINDOWS=1
 endif
 
+# Do we have a recent version of g++?
+ifeq ($(findstring 4.5.,$(shell g++ -dumpversion)), 4.5.)
+GCC45=1
+endif
+
+# MinGW32 4.5 linking issue...
+ifdef WINDOWS
+ifdef GCC45
+LFLAGS_EXTRA = -static-libstdc++
+endif
+endif
+
+# Enable C++0x features (e.g. threads)?
+ifdef GCC45
+CPPFLAGS_EXTRA = -std=c++0x -DUSE_STD_THREAD
+endif
+
 # Main program compiler settings
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML
-LFLAGS = -L../source -s
+CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML $(CPPFLAGS_EXTRA)
+LFLAGS = -L../source -s $(LFLAGS_EXTRA)
 LIBS = -lsolidaritycsg
 
 # TinyXML compiler settings
