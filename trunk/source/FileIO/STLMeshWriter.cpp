@@ -20,6 +20,7 @@
 #include <cstring>
 #include <stdint.h>
 #include "STLMeshWriter.h"
+#include "../Array.h"
 
 using namespace std;
 
@@ -56,6 +57,9 @@ static void PutFloat(unsigned char * aBuffer, float aValue)
 // STLMeshWriter
 //-----------------------------------------------------------------------------
 
+// Number of triangles to buffer between file writes
+#define TRI_BUF_SIZE 5000
+
 void STLMeshWriter::SaveToFile(const char * aFileName)
 {
   // Sanity check
@@ -74,14 +78,15 @@ void STLMeshWriter::SaveToFile(const char * aFileName)
   uint32_t triangleCount = mMesh->mIndices.size() / 3;
   WriteUInt32(f, triangleCount);
 
+  // Allocate memory for an output triangle buffer
+  Array<unsigned char> buf(TRI_BUF_SIZE * 50);
+  unsigned char * ptr = &buf[0];
+  int bufCount = 0;
+
   // Write all the triangle data
   int idx = 0;
   for(uint32_t i = 0; i < triangleCount; ++ i)
   {
-    // Write a single triangle (normal + 3 x vertex + padding)
-    char buf[50];
-    unsigned char * ptr = (unsigned char *) &buf[0];
-
     // Get the three triangle vertices
     Vector3 * v[3];
     v[0] = &mMesh->mVertices[mMesh->mIndices[idx]];
@@ -109,10 +114,21 @@ void STLMeshWriter::SaveToFile(const char * aFileName)
 
     // Clear the two pad bytes
     ptr[0] = ptr[1] = 0;
+    ptr += 2;
 
-    // Write the triangle to the output buffer
-    f.write(buf, 50);
+    // When the buffer is full, write it to the output stream
+    ++ bufCount;
+    if(bufCount == TRI_BUF_SIZE)
+    {
+      f.write((char *) &buf[0], bufCount * 50);
+      ptr = &buf[0];
+      bufCount = 0;
+    }
   }
+
+  // Are there any unwritten triangles in the buffer?
+  if(bufCount > 0)
+    f.write((char *) &buf[0], bufCount * 50);
 
   // Close output file
   f.close();
