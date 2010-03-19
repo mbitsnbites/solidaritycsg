@@ -131,16 +131,18 @@ void * _threadWrapper(void * aArg)
 #endif
 {
   thread * t = (thread *) aArg;
-  // FIXME
+  t->_execute();
   return 0;
 }
 
-template <class F> thread::thread(F f)
+thread::thread(void (*aFunction)(void *), void * aArg)
 {
+  mFunction = aFunction;
+  mArg = aArg;
 #ifdef WIN32
   // Create the thread
   mThread = CreateThread(
-              (LPSECURITY_ATTRIBUTES) 0,
+              0,
               0,
               _threadWrapper,
               (LPVOID) this,
