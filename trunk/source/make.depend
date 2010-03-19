@@ -20,7 +20,7 @@ Mesh.o: FileIO/Mesh.cpp FileIO/Mesh.h FileIO/../Vector3.h
 STLMeshReader.o: FileIO/STLMeshReader.cpp FileIO/STLMeshReader.h \
   FileIO/MeshReader.h FileIO/Mesh.h FileIO/../Vector3.h
 STLMeshWriter.o: FileIO/STLMeshWriter.cpp FileIO/STLMeshWriter.h \
-  FileIO/MeshWriter.h FileIO/Mesh.h FileIO/../Vector3.h
+  FileIO/MeshWriter.h FileIO/Mesh.h FileIO/../Vector3.h FileIO/../Array.h
 CSGNode.o: Boolean/CSGNode.cpp Boolean/CSGNode.h Boolean/../BoundingBox.h \
   Boolean/../Vector3.h Boolean/../SampleSpace.h Boolean/../BoundingBox.h \
   Boolean/../Voxelize/Voxelize.h Boolean/../Voxelize/../Vector3.h \
