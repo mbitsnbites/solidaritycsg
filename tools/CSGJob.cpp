@@ -15,14 +15,19 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Uncomment this line to disable multi threaded operation
+//#define SINGLE_THREADED
+
 #include <stdexcept>
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include "OS/OSThread.h"
 #include "CSGJob.h"
+#ifndef SINGLE_THREADED
+#include "OS/OSThread.h"
+#endif
 
 
 using namespace csg;
@@ -33,6 +38,8 @@ using namespace os;
 //------------------------------------------------------------------------------
 // CSGSlice
 //------------------------------------------------------------------------------
+
+#ifndef SINGLE_THREADED
 
 class CSGSlice {
   public:
@@ -74,10 +81,14 @@ class CSGSlice {
     bool mDone;    ///< Flag: true if the slice has been calculated.
 };
 
+#endif // !SINGLE_THREADED
+
 
 //------------------------------------------------------------------------------
 // CSGSlicePool
 //------------------------------------------------------------------------------
+
+#ifndef SINGLE_THREADED
 
 class CSGSlicePool {
   public:
@@ -85,6 +96,7 @@ class CSGSlicePool {
     {
       mNextID = 0;
       mSampleSpace = 0;
+      mCSGRoot = 0;
     }
 
     ~CSGSlicePool()
@@ -167,6 +179,9 @@ class CSGSlicePool {
       return result;
     }
 
+    /// Pointer to the CSG tree root node
+    CSGNode * mCSGRoot;
+
   private:
     mutex mMutex;
     condition_variable mCondition;
@@ -174,6 +189,28 @@ class CSGSlicePool {
     SampleSpace * mSampleSpace;
     list<CSGSlice *> mSlices;
 };
+
+#endif // !SINGLE_THREADED
+
+
+//------------------------------------------------------------------------------
+// Slice calculation thread function
+//------------------------------------------------------------------------------
+
+#ifndef SINGLE_THREADED
+
+static void SliceCalcThread(void * aArg)
+{
+  CSGSlicePool * slicePool = (CSGSlicePool *) aArg;
+  while(CSGSlice * slice = slicePool->NewSlice())
+  {
+    // Generate slice data
+    slicePool->mCSGRoot->ComposeSlice(slice->Data(), slice->ID());
+    slicePool->SliceDone(slice);
+  }
+}
+
+#endif // !SINGLE_THREADED
 
 
 //------------------------------------------------------------------------------
@@ -267,17 +304,36 @@ void CSGJob::Execute()
   {
     // Perform operation...
     cout << "Executing job..." << flush;
+#ifdef SINGLE_THREADED
     double polygonizeTime = 0;
+#endif
     mTimer.Push();
+
+#ifndef SINGLE_THREADED
+    // Start slice calculation threads
+    CSGSlicePool slicePool;
+    slicePool.SetSampleSpace(&space);
+    slicePool.mCSGRoot = mCSGRoot;
+    thread thread1(SliceCalcThread, (void *) &slicePool);
+    thread thread2(SliceCalcThread, (void *) &slicePool);
+    CSGSlice * slice, * sliceOld = 0;
+#else
+    // Allocate memory for two slices
     vector<Voxel> voxelSlice1, voxelSlice2;
     voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
     voxelSlice2.resize(space.mDiv[0] * space.mDiv[1]);
     Voxel * slice = &voxelSlice1[0];
     Voxel * sliceOld = &voxelSlice2[0];
+#endif
+
     for(int i = 0; i < space.mDiv[2]; ++ i)
     {
-      // Generate slice data
+      // Get the next slice
+#ifndef SINGLE_THREADED
+      slice = slicePool.GetSlice(i);
+#else
       mCSGRoot->ComposeSlice(slice, i);
+#endif
 
       // Write slice image or genereate mesh triangles?
       if(mOutputType == otSlices)
@@ -293,30 +349,55 @@ void CSGJob::Execute()
           name << ".tga";
 
         // Write this file to disk
+#ifndef SINGLE_THREADED
+        imgOut->SetData(slice->Data());
+#else
         imgOut->SetData(slice);
+#endif
         imgOut->SetSliceNo(i);
         imgOut->SetSampleSpace(&space);
         imgOut->SaveToFile(name.str().c_str());
       }
       else if(mOutputType == otMesh)
       {
+#ifndef SINGLE_THREADED
+        if(i > 0)
+          polygonize.AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
+#else
         mTimer.Push();
         if(i > 0)
           polygonize.AppendSlicePair(sliceOld, slice, i - 1);
         polygonizeTime += mTimer.PopDelta();
+#endif
       }
 
       // Swap slice buffers
+#ifndef SINGLE_THREADED
+      if(sliceOld)
+        delete sliceOld;
+      sliceOld = slice;
+#else
       Voxel * tmp = sliceOld;
       sliceOld = slice;
       slice = tmp;
+#endif
     }
+
+#ifdef SINGLE_THREADED
+    if(sliceOld)
+      delete sliceOld;
+#endif
+
     dt = mTimer.PopDelta();
+#ifndef SINGLE_THREADED
+    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
+#else
     cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms";
     if(polygonizeTime > 0.0)
       cout << ", polygonize: "  << int(polygonizeTime * 1000.0 + 0.5) << " ms)" << endl;
     else
       cout << ")" << endl;
+#endif
 
     if(imgOut)
     {

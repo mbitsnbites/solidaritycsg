@@ -123,6 +123,12 @@ void condition_variable::notify_all()
 // thread
 //------------------------------------------------------------------------------
 
+/// Information to pass to the new thread (what to run).
+struct _ThreadStartInfo {
+  void (*mFunction)(void *); ///< Pointer to the function to be executed.
+  void * mArg;               ///< Function argument for the thread function.
+};
+
 // Thread wrapper function.
 #ifdef WIN32
 DWORD WINAPI _threadWrapper(LPVOID aArg)
@@ -130,22 +136,26 @@ DWORD WINAPI _threadWrapper(LPVOID aArg)
 void * _threadWrapper(void * aArg)
 #endif
 {
-  thread * t = (thread *) aArg;
-  t->_execute();
+  _ThreadStartInfo * ti = (_ThreadStartInfo *) aArg;
+  ti->mFunction(ti->mArg);
+  delete ti;
   return 0;
 }
 
 thread::thread(void (*aFunction)(void *), void * aArg)
 {
-  mFunction = aFunction;
-  mArg = aArg;
+  // Fill out the thread startup information (passed to the thread wrapper)
+  _ThreadStartInfo * ti = new _ThreadStartInfo;
+  ti->mFunction = aFunction;
+  ti->mArg = aArg;
+
 #ifdef WIN32
   // Create the thread
   mThread = CreateThread(
               0,
               0,
               _threadWrapper,
-              (LPVOID) this,
+              (LPVOID) ti,
               0,
               &mThreadID
             );
@@ -153,7 +163,8 @@ thread::thread(void (*aFunction)(void *), void * aArg)
   if(!mThread)
     throw runtime_error("Unable to create thread.");
 #else
-  pthread_create(&mThread, NULL, _threadWrapper, (void *) this);
+  // Create the thread
+  pthread_create(&mThread, NULL, _threadWrapper, (void *) ti);
 #endif
 }
 

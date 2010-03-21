@@ -188,16 +188,7 @@ class thread {
 #endif
     }
 
-    /// This method is a wrapper function that is called from within the
-    /// newly created thread (do not call).
-    void _execute()
-    {
-      mFunction(mArg);
-    }
-
   private:
-    void (*mFunction)(void *); ///< Pointer to the function to be executed.
-    void * mArg;               ///< Function argument for the thread function.
 #ifdef WIN32
     HANDLE mThread;
     DWORD mThreadID;
