@@ -197,6 +197,12 @@ class thread {
 #endif
 };
 
+
+/// Determine the number of CPU cores in the system. This function is useful
+/// for determining the optimal number of threads to use for a task.
+int NumberOfCores();
+
+
 }
 
 #endif // _OSTHREAD_H_

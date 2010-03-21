@@ -314,8 +314,10 @@ void CSGJob::Execute()
     CSGSlicePool slicePool;
     slicePool.SetSampleSpace(&space);
     slicePool.mCSGRoot = mCSGRoot;
-    thread thread1(SliceCalcThread, (void *) &slicePool);
-    thread thread2(SliceCalcThread, (void *) &slicePool);
+    int numThreads = NumberOfCores();
+    list<thread *> threads;
+    for(int i = 0; i < numThreads; ++ i)
+      threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
     CSGSlice * slice, * sliceOld = 0;
 #else
     // Allocate memory for two slices
@@ -397,6 +399,16 @@ void CSGJob::Execute()
       cout << ", polygonize: "  << int(polygonizeTime * 1000.0 + 0.5) << " ms)" << endl;
     else
       cout << ")" << endl;
+#endif
+
+#ifndef SINGLE_THREADED
+    // Delete threads
+    for(list<thread *>::iterator i = threads.begin(); i != threads.end(); ++ i)
+    {
+      thread * t = *i;
+      t->join();
+      delete t;
+    }
 #endif
 
     if(imgOut)
