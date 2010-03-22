@@ -37,7 +37,8 @@ void BoxVoxelize::SetBox(Vector3 aCenter, Vector3 aSides)
   mAABB.mMax = mCenter + mSides * 0.5;
 }
 
-bool BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+  int &aMaxX, int &aMaxY)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -48,6 +49,11 @@ bool BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   if((d.x < 1e-50) || (d.y < 1e-50) || (d.z < 1e-50))
     throw runtime_error("Invalid voxel space dimensions.");
   Vector3 dInv(0.5 / d.x, 0.5 / d.y, 0.5 / d.z);
+
+  // Determine bounding rectangle
+  aMinX = aMinY = 0;
+  aMaxX = mSampleSpace->mDiv[0] - 1;
+  aMaxY = mSampleSpace->mDiv[1] - 1;
 
   // Generate slice
   Voxel * vPtr = aSlice;
@@ -66,7 +72,7 @@ bool BoxVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
     dist.z = mAABB.mMax.z - p.z;
   dist.z *= dInv.z;
 
-  for(int i = 0; i < mSampleSpace->mDiv[0]; ++ i)
+  for(int i = 0; i < mSampleSpace->mDiv[1]; ++ i)
   {
     p.y = mSampleSpace->mAABB.mMin.y + d.y * i;
 

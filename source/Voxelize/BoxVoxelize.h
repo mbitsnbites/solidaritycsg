@@ -38,7 +38,8 @@ class BoxVoxelize : public Voxelize {
     /// allocated by the caller, and hold DivX * DivY voxels. The function
     /// returns false if all elements were cosidered "outside" (i.e. the slice
     /// is empty).
-    virtual bool CalculateSlice(Voxel * aSlice, int aZ);
+    virtual bool CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+      int &aMaxX, int &aMaxY);
 
   private:
     Vector3 mCenter; ///< Box center.

@@ -82,21 +82,42 @@ void CSGUnion::GetBoundingBox(BoundingBox &aAABB)
   }
 }
 
-bool CSGUnion::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGUnion::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+  int &aMaxX, int &aMaxY)
 {
+  // Empty set?
+  if(mChildren.size() == 0)
+  {
+    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+    aMinX = aMinY = aMaxX = aMaxY = 0;
+    return false;
+  }
+
   bool first = true;
   list<CSGNode *>::iterator i;
   Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
   for(i = mChildren.begin(); i != mChildren.end(); ++ i)
   {
     if(first)
-      first = !(*i)->ComposeSlice(aSlice, aZ);
+      first = !(*i)->ComposeSlice(aSlice, aZ, aMinX, aMinY, aMaxX, aMaxY);
     else
     {
-      if((*i)->ComposeSlice(&tmpSlice[0], aZ))
+      int minX, minY, maxX, maxY;
+      if((*i)->ComposeSlice(&tmpSlice[0], aZ, minX, minY, maxX, maxY))
       {
-        for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-          aSlice[k] = MAX(aSlice[k], tmpSlice[k]);
+        if(minX < aMinX) aMinX = minX;
+        if(minY < aMinY) aMinY = minY;
+        if(maxX > aMaxX) aMaxX = maxX;
+        if(maxY > aMaxY) aMaxY = maxY;
+        for(int y = minY; y <= maxY; ++ y)
+        {
+          int idx = y * mSampleSpace->mDiv[0] + minX;
+          for(int x = minX; x <= maxX; ++ x)
+          {
+            aSlice[idx] = MAX(aSlice[idx], tmpSlice[idx]);
+            ++ idx;
+          }
+        }
       }
     }
   }
@@ -136,8 +157,17 @@ void CSGIntersection::GetBoundingBox(BoundingBox &aAABB)
   }
 }
 
-bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX,
+  int &aMinY, int &aMaxX, int &aMaxY)
 {
+  // Empty set?
+  if(mChildren.size() == 0)
+  {
+    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+    aMinX = aMinY = aMaxX = aMaxY = 0;
+    return false;
+  }
+
   bool first = true;
   list<CSGNode *>::iterator i;
   Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
@@ -145,18 +175,41 @@ bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ)
   {
     if(first)
     {
-      if(!(*i)->ComposeSlice(aSlice, aZ))
+      if(!(*i)->ComposeSlice(aSlice, aZ, aMinX, aMinY, aMaxX, aMaxY))
         return false;
     }
     else
     {
-      if(!(*i)->ComposeSlice(&tmpSlice[0], aZ))
+      int minX, minY, maxX, maxY;
+      bool nonEmpty = (*i)->ComposeSlice(&tmpSlice[0], aZ, minX, minY, maxX, maxY);
+      if((!nonEmpty) || (minX > aMaxX) || (maxX < aMinX) || (minY > aMaxY) ||
+         (maxY < aMinY))
       {
-        FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+        for(int y = aMinY; y <= aMaxY; ++ y)
+        {
+          int idx = y * mSampleSpace->mDiv[0] + aMinX;
+          for(int x = aMinX; x <= aMaxX; ++ x)
+          {
+            aSlice[idx] = -VOXEL_MAX;
+            ++ idx;
+          }
+        }
+        aMinX = aMinY = aMaxX = aMaxY = 0;
         return false;
       }
-      for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-        aSlice[k] = MIN(aSlice[k], tmpSlice[k]);
+      if(minX > aMinX) aMinX = minX;
+      if(minY > aMinY) aMinY = minY;
+      if(maxX < aMaxX) aMaxX = maxX;
+      if(maxY < aMaxY) aMaxY = maxY;
+      for(int y = aMinY; y <= aMaxY; ++ y)
+      {
+        int idx = y * mSampleSpace->mDiv[0] + aMinX;
+        for(int x = aMinX; x <= aMaxX; ++ x)
+        {
+          aSlice[idx] = MIN(aSlice[idx], tmpSlice[idx]);
+          ++ idx;
+        }
+      }
     }
     first = false;
   }
@@ -181,8 +234,17 @@ void CSGDifference::GetBoundingBox(BoundingBox &aAABB)
   (*mChildren.begin())->GetBoundingBox(aAABB);
 }
 
-bool CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGDifference::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+  int &aMaxX, int &aMaxY)
 {
+  // Empty set?
+  if(mChildren.size() == 0)
+  {
+    FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+    aMinX = aMinY = aMaxX = aMaxY = 0;
+    return false;
+  }
+
   bool first = true;
   list<CSGNode *>::iterator i;
   Array<Voxel> tmpSlice(mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
@@ -190,15 +252,30 @@ bool CSGDifference::ComposeSlice(Voxel * aSlice, int aZ)
   {
     if(first)
     {
-      if(!(*i)->ComposeSlice(aSlice, aZ))
+      if(!(*i)->ComposeSlice(aSlice, aZ, aMinX, aMinY, aMaxX, aMaxY))
         return false;
     }
     else
     {
-      if((*i)->ComposeSlice(&tmpSlice[0], aZ))
+      int minX, minY, maxX, maxY;
+      if((*i)->ComposeSlice(&tmpSlice[0], aZ, minX, minY, maxX, maxY))
       {
-        for(unsigned int k = 0; k < tmpSlice.size(); ++ k)
-          aSlice[k] = MIN(aSlice[k], -tmpSlice[k]);
+        if(aMinX > minX) minX = aMinX;
+        if(aMinY > minY) minY = aMinY;
+        if(aMaxX < maxX) maxX = aMaxX;
+        if(aMaxY < maxY) maxY = aMaxY;
+        if((maxX >= minX) && (maxY >= minY))
+        {
+          for(int y = minY; y <= maxY; ++ y)
+          {
+            int idx = y * mSampleSpace->mDiv[0] + minX;
+            for(int x = minX; x <= maxX; ++ x)
+            {
+              aSlice[idx] = MIN(aSlice[idx], -tmpSlice[idx]);
+              ++ idx;
+            }
+          }
+        }
       }
     }
     first = false;
@@ -242,13 +319,14 @@ void CSGShape::GetBoundingBox(BoundingBox &aAABB)
   mVoxelize->GetBoundingBox(aAABB);
 }
 
-bool CSGShape::ComposeSlice(Voxel * aSlice, int aZ)
+bool CSGShape::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+  int &aMaxX, int &aMaxY)
 {
   if(!mVoxelize)
     throw runtime_error("No shape defined.");
 
   // Calculate the slice
-  return mVoxelize->CalculateSlice(aSlice, aZ);
+  return mVoxelize->CalculateSlice(aSlice, aZ, aMinX, aMinY, aMaxX, aMaxY);
 }
 
 }

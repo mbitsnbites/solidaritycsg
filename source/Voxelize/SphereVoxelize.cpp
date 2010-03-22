@@ -38,7 +38,8 @@ void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius)
   mAABB.mMax = mCenter + r;
 }
 
-bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
+  int &aMinY, int &aMaxX, int &aMaxY)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -51,11 +52,16 @@ bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
     throw runtime_error("Invalid voxel space dimensions.");
   voxelSizeInv = 1.0 / d.Abs();
 
+  // Determine bounding rectangle
+  aMinX = aMinY = 0;
+  aMaxX = mSampleSpace->mDiv[0] - 1;
+  aMaxY = mSampleSpace->mDiv[1] - 1;
+
   // Generate slice
   Voxel * vPtr = aSlice;
   Vector3 p;
   p.z = mSampleSpace->mAABB.mMin.z + d.z * aZ;
-  for(int i = 0; i < mSampleSpace->mDiv[0]; ++ i)
+  for(int i = 0; i < mSampleSpace->mDiv[1]; ++ i)
   {
     p.y = mSampleSpace->mAABB.mMin.y + d.y * i;
     for(int j = 0; j < mSampleSpace->mDiv[0]; ++ j)

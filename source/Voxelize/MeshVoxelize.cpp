@@ -445,7 +445,8 @@ ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes,
   return new ZTreeNode(childA, childB);
 }
 
-bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
+bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
+  int &aMinY, int &aMaxX, int &aMaxY)
 {
   // Check that the voxel space has been properly set up
   if(!mSampleSpace || !mSampleSpace->IsValid())
@@ -496,49 +497,49 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   }
 
   // Convert bounding rectangle to voxel indices
-  int first[2], last[2];
-  first[0] = int((min[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) - 2;
-  first[1] = int((min[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) - 2;
-  last[0] = int((max[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) + 2;
-  last[1] = int((max[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) + 2;
+  aMinX = int((min[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) - 2;
+  aMinY = int((min[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) - 2;
+  aMaxX = int((max[0] - mSampleSpace->mAABB.mMin.x) / voxelSize.x) + 2;
+  aMaxY = int((max[1] - mSampleSpace->mAABB.mMin.y) / voxelSize.y) + 2;
 
   // Does the mesh volume miss this slice completely?
-  if((count == 0) || (last[0] < 0) || (last[1] < 0) ||
-     (first[0] >= mSampleSpace->mDiv[0]) ||
-     (first[1] >= mSampleSpace->mDiv[1]))
+  if((count == 0) || (aMaxX < 0) || (aMaxY < 0) ||
+     (aMinX >= mSampleSpace->mDiv[0]) ||
+     (aMinY >= mSampleSpace->mDiv[1]))
   {
     FillSlice(aSlice, -VOXEL_MAX, mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1]);
+    aMinX = aMinY = aMaxX = aMaxY = 0;
     return false;
   }
 
   // Clamp first/last indices of the bounding rectangle
-  if(first[0] < 0)
-    first[0] = 0;
-  if(first[1] < 0)
-    first[1] = 0;
-  if(last[0] >= mSampleSpace->mDiv[0])
-    last[0] = mSampleSpace->mDiv[0] - 1;
-  if(last[1] >= mSampleSpace->mDiv[1])
-    last[1] = mSampleSpace->mDiv[1] - 1;
+  if(aMinX < 0)
+    aMinX = 0;
+  if(aMinY < 0)
+    aMinY = 0;
+  if(aMaxX >= mSampleSpace->mDiv[0])
+    aMaxX = mSampleSpace->mDiv[0] - 1;
+  if(aMaxY >= mSampleSpace->mDiv[1])
+    aMaxY = mSampleSpace->mDiv[1] - 1;
 
   // Mark all voxels inside the intersection bounding rectangle as "UNVISITED",
   // and all voxels outside of the intersection bounding rectangle as "outside".
   Voxel * ptr = aSlice;
-  for(int y = 0; y < first[1]; ++ y)
+  for(int y = 0; y < aMinY; ++ y)
   {
     for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
       *ptr ++ = -VOXEL_MAX;
   }
-  for(int y = first[1]; y <= last[1]; ++ y)
+  for(int y = aMinY; y <= aMaxY; ++ y)
   {
-    for(int x = 0; x < first[0]; ++ x)
+    for(int x = 0; x < aMinX; ++ x)
       *ptr ++ = -VOXEL_MAX;
-    for(int x = first[0]; x <= last[0]; ++ x)
+    for(int x = aMinX; x <= aMaxX; ++ x)
       *ptr ++ = VOXEL_UNVISITED;
-    for(int x = last[0] + 1; x < mSampleSpace->mDiv[0]; ++ x)
+    for(int x = aMaxX + 1; x < mSampleSpace->mDiv[0]; ++ x)
       *ptr ++ = -VOXEL_MAX;
   }
-  for(int y = last[1] + 1; y < mSampleSpace->mDiv[1]; ++ y)
+  for(int y = aMaxY + 1; y < mSampleSpace->mDiv[1]; ++ y)
   {
     for(int x = 0; x < mSampleSpace->mDiv[0]; ++ x)
       *ptr ++ = -VOXEL_MAX;
@@ -549,10 +550,10 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
     DrawLineSegment(aSlice, intersections[i * 2], intersections[i * 2 + 1]);
 
   // Determine in/out for all the visited (=drawn) voxels
-  for(int y = first[1]; y <= last[1]; ++ y)
+  for(int y = aMinY; y <= aMaxY; ++ y)
   {
-    ptr = &aSlice[y * mSampleSpace->mDiv[0] + first[0]];
-    for(int x = first[0]; x <= last[0]; ++ x)
+    ptr = &aSlice[y * mSampleSpace->mDiv[0] + aMinX];
+    for(int x = aMinX; x <= aMaxX; ++ x)
     {
       Voxel value = *ptr;
       if(value != VOXEL_UNVISITED)
@@ -572,10 +573,10 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ)
   }
 
   // Flood fill the unvisited parts of the slice according to in/out
-  for(int y = first[1]; y <= last[1]; ++ y)
+  for(int y = aMinY; y <= aMaxY; ++ y)
   {
-    ptr = &aSlice[y * mSampleSpace->mDiv[0] + first[0]];
-    for(int x = first[0]; x <= last[0]; ++ x)
+    ptr = &aSlice[y * mSampleSpace->mDiv[0] + aMinX];
+    for(int x = aMinX; x <= aMaxX; ++ x)
     {
       if(*ptr == VOXEL_UNVISITED)
       {
