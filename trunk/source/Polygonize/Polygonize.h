@@ -47,6 +47,12 @@ class Polygonize {
     /// Export the state of the polygonizer to a mesh object.
     void ToMesh(Mesh &aMesh);
 
+    /// Return the total triangle count.
+    inline int Count()
+    {
+      return mTriBuf.Count();
+    }
+
   private:
     /// Voxel sample space definition.
     SampleSpace * mSampleSpace;

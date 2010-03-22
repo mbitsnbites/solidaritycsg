@@ -280,6 +280,7 @@ void CSGJob::Execute()
   mCSGRoot->GetBoundingBox(sceneAABB);
   space.DefineSpace(sceneAABB, mResolution);
   mCSGRoot->SetSampleSpace(&space);
+  cout << space.mDiv[0]*space.mDiv[1]*space.mDiv[2] << " voxels...";
   dt = mTimer.PopDelta();
   cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
@@ -314,7 +315,8 @@ void CSGJob::Execute()
     CSGSlicePool slicePool;
     slicePool.SetSampleSpace(&space);
     slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = NumberOfCores();
+    int numThreads = NumberOfCores() + 1;
+    cout << "using " << (numThreads + 1) << " threads..." << flush;
     list<thread *> threads;
     for(int i = 0; i < numThreads; ++ i)
       threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
@@ -420,7 +422,7 @@ void CSGJob::Execute()
     // Write mesh file
     if(mOutputType == otMesh)
     {
-      cout << "Writing mesh file..." << flush;
+      cout << "Writing mesh file..." << polygonize.Count() << " triangles..." << flush;
       mTimer.Push();
       Mesh mesh;
       polygonize.ToMesh(mesh);
