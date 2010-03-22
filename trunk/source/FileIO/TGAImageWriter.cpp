@@ -52,10 +52,11 @@ static const unsigned char gTGAHeaderTemplate[18] = {
 // TGAImageWriter
 //-----------------------------------------------------------------------------
 
-void TGAImageWriter::SaveToFile(const char * aFileName)
+void TGAImageWriter::SaveToFile(const char * aFileName, void * aData,
+  int aSliceNo)
 {
   // Sanity check
-  if(!mData || (mWidth < 1) || (mHeight < 1))
+  if(!aData || (mWidth < 1) || (mHeight < 1))
     throw runtime_error("Badly defined image.");
 
   // We only support 8-bit signed images
@@ -79,7 +80,7 @@ void TGAImageWriter::SaveToFile(const char * aFileName)
   // Convert the image to the output format
   int imgSize = mWidth * mHeight;
   vector<unsigned char> data(imgSize);
-  char * src = (char *)mData;
+  char * src = (char *)aData;
   unsigned char * dst = &data[0];
   for(int i = 0; i < imgSize; ++ i)
     *dst ++ = ((unsigned char)(*src ++)) + 128;

@@ -26,7 +26,7 @@ namespace csg {
 class TGAImageWriter : public ImageWriter {
   public:
     /// Save the image to a file.
-    virtual void SaveToFile(const char * aFileName);
+    virtual void SaveToFile(const char * aFileName, void * aData, int aSliceNo = 0);
 };
 
 }

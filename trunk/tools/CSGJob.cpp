@@ -295,10 +295,7 @@ void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
           name << ".tga";
 
         // Write this file to disk
-        aImageWriter->SetData(slice);
-        aImageWriter->SetSliceNo(i);
-        aImageWriter->SetSampleSpace(aSampleSpace);
-        aImageWriter->SaveToFile(name.str().c_str());
+        aImageWriter->SaveToFile(name.str().c_str(), slice, i);
       }
       else if(mOutputType == otMesh)
       {
@@ -350,10 +347,7 @@ void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
           name << ".tga";
 
         // Write this file to disk
-        aImageWriter->SetData(slice->Data());
-        aImageWriter->SetSliceNo(i);
-        aImageWriter->SetSampleSpace(aSampleSpace);
-        aImageWriter->SaveToFile(name.str().c_str());
+        aImageWriter->SaveToFile(name.str().c_str(), slice->Data(), i);
       }
       else if(mOutputType == otMesh)
       {
@@ -393,16 +387,17 @@ void CSGJob::Execute(OperationMode aOperationMode)
   cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
   // Prepare output generator
-  ImageWriter * imgOut = 0;
+  ImageWriter * imageWriter = 0;
   Polygonize * polygonize = 0;
   if(mOutputType == otSlices)
   {
     // Prepare image writer
     if(mOutputFormat == ofTGA)
-      imgOut = new TGAImageWriter;
+      imageWriter = new TGAImageWriter;
     else
       throw runtime_error("Unsupported output format for slices.");
-    imgOut->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
+    imageWriter->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
+    imageWriter->SetSampleSpace(&space);
   }
   else if(mOutputType == otMesh)
   {
@@ -417,17 +412,11 @@ void CSGJob::Execute(OperationMode aOperationMode)
     cout << "Executing job..." << flush;
     mTimer.Push();
     if(aOperationMode == omSingleThreaded)
-      ExecuteJobST(&space, polygonize, imgOut);
+      ExecuteJobST(&space, polygonize, imageWriter);
     else
-      ExecuteJobMT(&space, polygonize, imgOut);
+      ExecuteJobMT(&space, polygonize, imageWriter);
     dt = mTimer.PopDelta();
     cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
-
-    if(imgOut)
-    {
-      delete imgOut;
-      imgOut = 0;
-    }
 
     // Write mesh file
     if(mOutputType == otMesh)
@@ -447,11 +436,23 @@ void CSGJob::Execute(OperationMode aOperationMode)
       dt = mTimer.PopDelta();
       cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
     }
+
+    if(imageWriter)
+    {
+      delete imageWriter;
+      imageWriter = 0;
+    }
+
+    if(polygonize)
+    {
+      delete polygonize;
+      polygonize = 0;
+    }
   }
   catch(...)
   {
-    if(imgOut)
-      delete imgOut;
+    if(imageWriter)
+      delete imageWriter;
     if(polygonize)
       delete polygonize;
     throw;
