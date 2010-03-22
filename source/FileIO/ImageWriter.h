@@ -32,12 +32,13 @@ class ImageWriter {
     /// Constructor.
     ImageWriter()
     {
-      mData = 0;
       mWidth = mHeight = 0;
       mPixelFormat = pfSigned8;
       mSampleSpace = 0;
-      mSliceNo = 0;
     }
+
+    /// Destructor.
+    virtual ~ImageWriter() {}
 
     /// Define the image format.
     inline void SetFormat(int aWidth, int aHeight, PixelFormat aPixelFormat)
@@ -53,28 +54,14 @@ class ImageWriter {
       mSampleSpace = aSampleSpace;
     }
 
-    /// Define the current slice number.
-    inline void SetSliceNo(int aSliceNo)
-    {
-      mSliceNo = aSliceNo;
-    }
-
-    /// Define the image data.
-    inline void SetData(void * aData)
-    {
-      mData = aData;
-    }
-
     /// Save the image to a file.
-    virtual void SaveToFile(const char * aFileName) = 0;
+    virtual void SaveToFile(const char * aFileName, void * aData, int aSliceNo = 0) = 0;
 
   protected:
-    void * mData;               ///< Image pixel data.
     int mWidth;                 ///< Bitmap width.
     int mHeight;                ///< Bitmap height.
     PixelFormat mPixelFormat;   ///< Pixel format.
     SampleSpace * mSampleSpace; ///< Sample space definition
-    int mSliceNo;               ///< Current slice number.
 };
 
 }
