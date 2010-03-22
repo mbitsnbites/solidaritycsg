@@ -26,6 +26,12 @@
 /// CSG job class.
 class CSGJob {
   public:
+    /// Operation mode.
+    enum OperationMode {
+      omSingleThreaded = 1,
+      omMultiThreaded = 2
+    };
+
     /// Constructor.
     CSGJob();
 
@@ -36,7 +42,7 @@ class CSGJob {
     void LoadFromXML(const char * aFileName);
 
     /// Execute job.
-    void Execute();
+    void Execute(OperationMode aOperationMode = omMultiThreaded);
 
   private:
     /// Output type enumerator.
@@ -50,6 +56,14 @@ class CSGJob {
       ofTGA = 1,
       ofSTL = 2
     };
+
+    /// Execute the job core operation in single threaded mode.
+    void ExecuteJobST(csg::SampleSpace * aSampleSpace, csg::Polygonize * aPolygonize,
+      csg::ImageWriter * aImageWriter);
+
+    /// Execute the job core operation in multi threaded mode.
+    void ExecuteJobMT(csg::SampleSpace * aSampleSpace, csg::Polygonize * aPolygonize,
+      csg::ImageWriter * aImageWriter);
 
     /// Load the settings description from an XML document node.
     void LoadSettings(TiXmlNode * aNode);

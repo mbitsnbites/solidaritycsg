@@ -15,9 +15,6 @@
   along with SolidarityCSG.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Uncomment this line to disable multi threaded operation
-//#define SINGLE_THREADED
-
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -25,9 +22,7 @@
 #include <iomanip>
 #include <vector>
 #include "CSGJob.h"
-#ifndef SINGLE_THREADED
 #include "OS/OSThread.h"
-#endif
 
 
 using namespace csg;
@@ -268,76 +263,23 @@ void CSGJob::LoadFromXML(const char * aFileName)
   }
 }
 
-void CSGJob::Execute()
+void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
+  ImageWriter * aImageWriter)
 {
-  double dt;
+    cout << "single threaded..." << flush;
 
-  // Set up a sample space
-  mTimer.Push();
-  cout << "Setting up voxel sample space..." << flush;
-  SampleSpace space;
-  BoundingBox sceneAABB;
-  mCSGRoot->GetBoundingBox(sceneAABB);
-  space.DefineSpace(sceneAABB, mResolution);
-  mCSGRoot->SetSampleSpace(&space);
-  cout << space.mDiv[0]*space.mDiv[1]*space.mDiv[2] << " voxels...";
-  dt = mTimer.PopDelta();
-  cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
-
-  ImageWriter * imgOut = 0;
-  Polygonize polygonize;
-  if(mOutputType == otSlices)
-  {
-    // Prepare image writer
-    if(mOutputFormat == ofTGA)
-      imgOut = new TGAImageWriter;
-    else
-      throw runtime_error("Unsupported output format for slices.");
-    imgOut->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
-  }
-  else if(mOutputType == otMesh)
-  {
-    // Prepare polygonizer
-    polygonize.SetSampleSpace(&space);
-  }
-
-  try
-  {
-    // Perform operation...
-    cout << "Executing job..." << flush;
-#ifdef SINGLE_THREADED
-    double polygonizeTime = 0;
-#endif
-    mTimer.Push();
-
-#ifndef SINGLE_THREADED
-    // Start slice calculation threads
-    CSGSlicePool slicePool;
-    slicePool.SetSampleSpace(&space);
-    slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = NumberOfCores() + 1;
-    cout << "using " << (numThreads + 1) << " threads..." << flush;
-    list<thread *> threads;
-    for(int i = 0; i < numThreads; ++ i)
-      threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
-    CSGSlice * slice, * sliceOld = 0;
-#else
     // Allocate memory for two slices
     vector<Voxel> voxelSlice1, voxelSlice2;
-    voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
-    voxelSlice2.resize(space.mDiv[0] * space.mDiv[1]);
+    voxelSlice1.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
+    voxelSlice2.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
     Voxel * slice = &voxelSlice1[0];
     Voxel * sliceOld = &voxelSlice2[0];
-#endif
 
-    for(int i = 0; i < space.mDiv[2]; ++ i)
+    // Iterate all slices and produce output data
+    for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
     {
       // Get the next slice
-#ifndef SINGLE_THREADED
-      slice = slicePool.GetSlice(i);
-#else
       mCSGRoot->ComposeSlice(slice, i);
-#endif
 
       // Write slice image or genereate mesh triangles?
       if(mOutputType == otSlices)
@@ -353,57 +295,78 @@ void CSGJob::Execute()
           name << ".tga";
 
         // Write this file to disk
-#ifndef SINGLE_THREADED
-        imgOut->SetData(slice->Data());
-#else
-        imgOut->SetData(slice);
-#endif
-        imgOut->SetSliceNo(i);
-        imgOut->SetSampleSpace(&space);
-        imgOut->SaveToFile(name.str().c_str());
+        aImageWriter->SetData(slice);
+        aImageWriter->SetSliceNo(i);
+        aImageWriter->SetSampleSpace(aSampleSpace);
+        aImageWriter->SaveToFile(name.str().c_str());
       }
       else if(mOutputType == otMesh)
       {
-#ifndef SINGLE_THREADED
         if(i > 0)
-          polygonize.AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
-#else
-        mTimer.Push();
-        if(i > 0)
-          polygonize.AppendSlicePair(sliceOld, slice, i - 1);
-        polygonizeTime += mTimer.PopDelta();
-#endif
+          aPolygonize->AppendSlicePair(sliceOld, slice, i - 1);
       }
 
       // Swap slice buffers
-#ifndef SINGLE_THREADED
-      if(sliceOld)
-        delete sliceOld;
-      sliceOld = slice;
-#else
       Voxel * tmp = sliceOld;
       sliceOld = slice;
       slice = tmp;
-#endif
     }
 
-#ifdef SINGLE_THREADED
     if(sliceOld)
       delete sliceOld;
-#endif
+}
 
-    dt = mTimer.PopDelta();
-#ifndef SINGLE_THREADED
-    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
-#else
-    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms";
-    if(polygonizeTime > 0.0)
-      cout << ", polygonize: "  << int(polygonizeTime * 1000.0 + 0.5) << " ms)" << endl;
-    else
-      cout << ")" << endl;
-#endif
+void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
+  ImageWriter * aImageWriter)
+{
+    // Start slice calculation threads
+    CSGSlicePool slicePool;
+    slicePool.SetSampleSpace(aSampleSpace);
+    slicePool.mCSGRoot = mCSGRoot;
+    int numThreads = NumberOfCores() + 1;
+    cout << "using " << (numThreads + 1) << " threads..." << flush;
+    list<thread *> threads;
+    for(int i = 0; i < numThreads; ++ i)
+      threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
+    CSGSlice * slice, * sliceOld = 0;
 
-#ifndef SINGLE_THREADED
+    // Iterate all slices and produce output data
+    for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
+    {
+      // Get the next slice
+      slice = slicePool.GetSlice(i);
+
+      // Write slice image or genereate mesh triangles?
+      if(mOutputType == otSlices)
+      {
+        // Construct file name for the slice
+        stringstream name;
+        name << mOutputFileName;
+        name.fill('0');
+        name.width(5);
+        name << i;
+        name.width(0);
+        if(mOutputFormat == ofTGA)
+          name << ".tga";
+
+        // Write this file to disk
+        aImageWriter->SetData(slice->Data());
+        aImageWriter->SetSliceNo(i);
+        aImageWriter->SetSampleSpace(aSampleSpace);
+        aImageWriter->SaveToFile(name.str().c_str());
+      }
+      else if(mOutputType == otMesh)
+      {
+        if(i > 0)
+          aPolygonize->AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
+      }
+
+      // Swap slice buffers
+      if(sliceOld)
+        delete sliceOld;
+      sliceOld = slice;
+    }
+
     // Delete threads
     for(list<thread *>::iterator i = threads.begin(); i != threads.end(); ++ i)
     {
@@ -411,7 +374,54 @@ void CSGJob::Execute()
       t->join();
       delete t;
     }
-#endif
+}
+
+void CSGJob::Execute(OperationMode aOperationMode)
+{
+  double dt;
+
+  // Set up a sample space
+  mTimer.Push();
+  cout << "Setting up voxel sample space..." << flush;
+  SampleSpace space;
+  BoundingBox sceneAABB;
+  mCSGRoot->GetBoundingBox(sceneAABB);
+  space.DefineSpace(sceneAABB, mResolution);
+  mCSGRoot->SetSampleSpace(&space);
+  cout << space.mDiv[0]*space.mDiv[1]*space.mDiv[2] << " voxels...";
+  dt = mTimer.PopDelta();
+  cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
+
+  // Prepare output generator
+  ImageWriter * imgOut = 0;
+  Polygonize * polygonize = 0;
+  if(mOutputType == otSlices)
+  {
+    // Prepare image writer
+    if(mOutputFormat == ofTGA)
+      imgOut = new TGAImageWriter;
+    else
+      throw runtime_error("Unsupported output format for slices.");
+    imgOut->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
+  }
+  else if(mOutputType == otMesh)
+  {
+    // Prepare polygonizer
+    polygonize = new Polygonize;
+    polygonize->SetSampleSpace(&space);
+  }
+
+  try
+  {
+    // Perform operation...
+    cout << "Executing job..." << flush;
+    mTimer.Push();
+    if(aOperationMode == omSingleThreaded)
+      ExecuteJobST(&space, polygonize, imgOut);
+    else
+      ExecuteJobMT(&space, polygonize, imgOut);
+    dt = mTimer.PopDelta();
+    cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
     if(imgOut)
     {
@@ -422,10 +432,10 @@ void CSGJob::Execute()
     // Write mesh file
     if(mOutputType == otMesh)
     {
-      cout << "Writing mesh file..." << polygonize.Count() << " triangles..." << flush;
+      cout << "Writing mesh file..." << polygonize->Count() << " triangles..." << flush;
       mTimer.Push();
       Mesh mesh;
-      polygonize.ToMesh(mesh);
+      polygonize->ToMesh(mesh);
       if(mOutputFormat == ofSTL)
       {
         STLMeshWriter meshWriter;
@@ -442,6 +452,8 @@ void CSGJob::Execute()
   {
     if(imgOut)
       delete imgOut;
+    if(polygonize)
+      delete polygonize;
     throw;
   }
 }

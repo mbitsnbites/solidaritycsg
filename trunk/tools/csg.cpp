@@ -17,6 +17,8 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <string>
+#include <list>
 #include "CSGJob.h"
 
 using namespace std;
@@ -25,21 +27,35 @@ using namespace std;
 /// Main application entry
 int main(int argc, char ** argv)
 {
-  // Check/get arguments
-  if(argc < 2)
+  // Collect arguments
+  CSGJob::OperationMode mode = CSGJob::omMultiThreaded;
+  list<string> jobFiles;
+  for(int i = 1; i < argc; ++ i)
   {
-    cout << "Usage: " << argv[0] << " job-xml [job-xml [...]]" << endl;
+    if(string(argv[i]) == string("-st"))
+      mode = CSGJob::omSingleThreaded;
+    else
+      jobFiles.push_back(string(argv[i]));
+  }
+
+  // Check arguments
+  if(jobFiles.size() < 1)
+  {
+    cout << "Usage: " << argv[0] << " [options] job-xml [job-xml [...]]" << endl;
+    cout << "Options:" << endl;
+    cout << " -st  Use single threaded operation (default is multi threaded operation)." << endl;
     return -1;
   }
+
   try
   {
-    for(int i = 1; i < argc; ++ i)
+    // Perform all the jobs
+    for(list<string>::iterator i = jobFiles.begin(); i != jobFiles.end(); ++ i)
     {
       CSGJob job;
-      job.LoadFromXML(argv[i]);
-      job.Execute();
-      if(i < (argc - 1))
-        cout << endl;
+      job.LoadFromXML((*i).c_str());
+      job.Execute(mode);
+      cout << endl;
     }
   }
   catch(exception &e)
