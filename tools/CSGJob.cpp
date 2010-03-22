@@ -21,12 +21,13 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <tinythread.h>
 #include "CSGJob.h"
-#include "OS/OSThread.h"
 
 
-using namespace csg;
 using namespace std;
+using namespace tinythread;
+using namespace csg;
 using namespace os;
 
 
@@ -308,7 +309,7 @@ void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
     CSGSlicePool slicePool;
     slicePool.SetSampleSpace(aSampleSpace);
     slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = NumberOfCores() + 1;
+    int numThreads = number_of_cores() + 1;
     cout << "using " << (numThreads + 1) << " threads..." << flush;
     list<thread *> threads;
     for(int i = 0; i < numThreads; ++ i)

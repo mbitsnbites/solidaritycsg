@@ -34,12 +34,15 @@ endif
 
 # Main program compiler settings
 CPP = g++
-CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML $(CPPFLAGS_EXTRA)
+CPPFLAGS = -O3 -W -Wall -c -I../source -I./TinyXML -I./TinyThread $(CPPFLAGS_EXTRA)
 LFLAGS = -L../source -s $(LFLAGS_EXTRA)
 LIBS = -lsolidaritycsg
 
 # TinyXML compiler settings
-TINYCPPFLAGS = -O2 -W -c -I./TinyXML
+TINYXMLCPPFLAGS = -O2 -W -c -I./TinyXML
+
+# TinyThread compiler settings
+TINYTHREADCPPFLAGS = -O2 -W -c -I./TinyThread
 
 # Misc. system commands
 ifdef WINDOWS
@@ -58,8 +61,7 @@ endif
 # CSG program object files
 CSGOBJS = csg.o \
           CSGJob.o \
-          OSTime.o \
-          OSThread.o
+          OSTime.o
 
 # Demo program object files
 DEMOOBJS = demo.o
@@ -70,13 +72,16 @@ TINYXMLOBJS = tinyxml.o \
               tinyxmlparser.o \
               tinystr.o
 
+# TinyThread++ object files
+TINYTHREADOBJS = tinythread.o
+
 all: csg$(EXE) demo$(EXE)
 
 clean:
-	$(RM) $(CSGOBJS) $(DEMOOBJS) $(TINYXMLOBJS) csg$(EXE) demo$(EXE)
+	$(RM) $(CSGOBJS) $(DEMOOBJS) $(TINYXMLOBJS) $(TINYTHREADOBJS) csg$(EXE) demo$(EXE)
 
-csg$(EXE): $(CSGOBJS) $(TINYXMLOBJS)
-	$(CPP) $(LFLAGS) -o $@ $(CSGOBJS) $(TINYXMLOBJS) $(LIBS)
+csg$(EXE): $(CSGOBJS) $(TINYXMLOBJS) $(TINYTHREADOBJS)
+	$(CPP) $(LFLAGS) -o $@ $(CSGOBJS) $(TINYXMLOBJS) $(TINYTHREADOBJS) $(LIBS)
 
 demo$(EXE): $(DEMOOBJS)
 	$(CPP) $(LFLAGS) -o $@ $(DEMOOBJS) $(LIBS)
@@ -88,11 +93,13 @@ demo$(EXE): $(DEMOOBJS)
 	$(CPP) $(CPPFLAGS) $<
 
 %.o: TinyXML/%.cpp
-	$(CPP) $(TINYCPPFLAGS) $<
+	$(CPP) $(TINYXMLCPPFLAGS) $<
+
+%.o: TinyThread/%.cpp
+	$(CPP) $(TINYTHREADCPPFLAGS) $<
 
 # Dependencies
 demo.o: demo.cpp
 csg.o: csg.cpp CSGJob.h
-CSGJob.o: CSGJob.cpp CSGJob.h OS/OSTime.h OS/OSThread.h
+CSGJob.o: CSGJob.cpp CSGJob.h OS/OSTime.h
 OSTime.o: OS/OSTime.cpp OS/OSTime.h
-OSThread.o: OS/OSThread.cpp OS/OSThread.h
