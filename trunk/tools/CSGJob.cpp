@@ -190,7 +190,7 @@ static void SliceCalcThread(void * aArg)
   while(CSGSlice * slice = slicePool->NewSlice())
   {
     // Generate slice data
-    slicePool->mCSGRoot->ComposeSlice(slice->Data(), slice->ID());
+    slicePool->mCSGRoot->CalculateSlice(slice->Data(), slice->ID());
     slicePool->SliceDone(slice);
   }
 }
@@ -267,7 +267,7 @@ void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
     for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
     {
       // Get the next slice
-      mCSGRoot->ComposeSlice(slice, i);
+      mCSGRoot->CalculateSlice(slice, i);
 
       // Write slice image or genereate mesh triangles?
       if(mOutputType == otSlices)
