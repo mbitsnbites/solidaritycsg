@@ -60,7 +60,7 @@ int main()
     for(int i = 0; i < space.mDiv[2]; ++ i)
     {
       // Generate slice data
-      csg.ComposeSlice(slice, i);
+      csg.CalculateSlice(slice, i);
 
       // Convert to triangles
       if(i > 0)
