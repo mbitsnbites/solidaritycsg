@@ -23,7 +23,7 @@ endif
 # MinGW32 4.5 linking issue...
 ifdef WINDOWS
 ifeq ($(findstring 4.5.,$(shell g++ -dumpversion)), 4.5.)
-LFLAGS_EXTRA = -static-libstdc++
+LFLAGS_EXTRA = -static-libstdc++ -static-libgcc
 endif
 endif
 
