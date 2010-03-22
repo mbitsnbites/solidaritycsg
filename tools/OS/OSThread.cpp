@@ -175,7 +175,19 @@ thread::thread(void (*aFunction)(void *), void * aArg)
 
 int NumberOfCores()
 {
-  return 2;
+#ifdef WIN32
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return (int) si.dwNumberOfProcessors;
+#else
+  #if defined(_SC_NPROCESSORS_ONLN)
+    return (int) sysconf(_SC_NPROCESSORS_ONLN);
+  #elif defined(_SC_NPROC_ONLN)
+    return (int) sysconf(_SC_NPROC_ONLN);
+  #else
+    return 2;
+  #endif
+#endif
 }
 
 }

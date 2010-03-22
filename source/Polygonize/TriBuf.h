@@ -77,6 +77,12 @@ class TriBuf {
     /// triangle buffer (to save memory).
     void ToMesh(Mesh &aMesh);
 
+    /// Return the total triangle count.
+    inline int Count()
+    {
+      return mCount;
+    }
+
   private:
     /// List of buffers.
     std::list<TriBufBin *> mBufList;
