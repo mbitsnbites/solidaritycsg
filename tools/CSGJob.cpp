@@ -34,8 +34,6 @@ using namespace os;
 // CSGSlice
 //------------------------------------------------------------------------------
 
-#ifndef SINGLE_THREADED
-
 class CSGSlice {
   public:
     CSGSlice(int aSize, int aID)
@@ -76,14 +74,10 @@ class CSGSlice {
     bool mDone;    ///< Flag: true if the slice has been calculated.
 };
 
-#endif // !SINGLE_THREADED
-
 
 //------------------------------------------------------------------------------
 // CSGSlicePool
 //------------------------------------------------------------------------------
-
-#ifndef SINGLE_THREADED
 
 class CSGSlicePool {
   public:
@@ -185,14 +179,10 @@ class CSGSlicePool {
     list<CSGSlice *> mSlices;
 };
 
-#endif // !SINGLE_THREADED
-
 
 //------------------------------------------------------------------------------
 // Slice calculation thread function
 //------------------------------------------------------------------------------
-
-#ifndef SINGLE_THREADED
 
 static void SliceCalcThread(void * aArg)
 {
@@ -204,8 +194,6 @@ static void SliceCalcThread(void * aArg)
     slicePool->SliceDone(slice);
   }
 }
-
-#endif // !SINGLE_THREADED
 
 
 //------------------------------------------------------------------------------
