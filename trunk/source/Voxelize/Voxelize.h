@@ -52,7 +52,8 @@ class Voxelize {
     /// allocated by the caller, and hold DivX * DivY voxels. The function
     /// returns false if all elements were cosidered "outside" (i.e. the slice
     /// is empty).
-    virtual bool CalculateSlice(Voxel * aSlice, int aZ) = 0;
+    virtual bool CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
+      int &aMaxX, int &aMaxY) = 0;
 
   protected:
     SampleSpace * mSampleSpace; ///< Voxel sample space definition.
