@@ -40,8 +40,8 @@ namespace os {
 condition_variable::condition_variable()
 {
   mWaitersCount = 0;
-  mEvents[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
-  mEvents[1] = CreateEvent(NULL, TRUE, FALSE, NULL);
+  mEvents[_CONDITION_EVENT_ONE] = CreateEvent(NULL, FALSE, FALSE, NULL);
+  mEvents[_CONDITION_EVENT_ALL] = CreateEvent(NULL, TRUE, FALSE, NULL);
   InitializeCriticalSection(&mWaitersCountLock);
 }
 #endif
@@ -49,8 +49,8 @@ condition_variable::condition_variable()
 #ifdef WIN32
 condition_variable::~condition_variable()
 {
-  CloseHandle(mEvents[0]);
-  CloseHandle(mEvents[1]);
+  CloseHandle(mEvents[_CONDITION_EVENT_ONE]);
+  CloseHandle(mEvents[_CONDITION_EVENT_ALL]);
   DeleteCriticalSection(&mWaitersCountLock);
 }
 #endif
@@ -78,13 +78,9 @@ void condition_variable::wait(mutex &aMutex)
                     (mWaitersCount == 0);
   LeaveCriticalSection(&mWaitersCountLock);
 
-  // Some thread called notify_all()
+  // If we are the last waiter to be notified to stop waiting, reset the event
   if(lastWaiter)
-  {
-    // We're the last waiter to be notified or to stop waiting, so reset the
-    // manual event
     ResetEvent(mEvents[_CONDITION_EVENT_ALL]);
-  }
 
   // Reacquire the mutex
   EnterCriticalSection(&aMutex.mMutex);
