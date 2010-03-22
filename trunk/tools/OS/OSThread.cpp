@@ -136,32 +136,38 @@ DWORD WINAPI _threadWrapper(LPVOID aArg)
 void * _threadWrapper(void * aArg)
 #endif
 {
+  // Get thread startup information
   _ThreadStartInfo * ti = (_ThreadStartInfo *) aArg;
-  ti->mFunction(ti->mArg);
+
+  try
+  {
+    // Call the actual client thread function
+    ti->mFunction(ti->mArg);
+  }
+  catch(...)
+  {
+    // Uncaught exceptions will terminate the application (default behavior
+    // according to the C++0x draft)
+    terminate();
+  }
+
+  // The thread is responsible for freeing the startup information
   delete ti;
+
   return 0;
 }
 
 thread::thread(void (*aFunction)(void *), void * aArg)
 {
-  // Fill out the thread startup information (passed to the thread wrapper)
+  // Fill out the thread startup information (passed to the thread wrapper,
+  // which will eventually free it)
   _ThreadStartInfo * ti = new _ThreadStartInfo;
   ti->mFunction = aFunction;
   ti->mArg = aArg;
 
 #ifdef WIN32
   // Create the thread
-  mThread = CreateThread(
-              0,
-              0,
-              _threadWrapper,
-              (LPVOID) ti,
-              0,
-              &mThreadID
-            );
-
-  if(!mThread)
-    throw runtime_error("Unable to create thread.");
+  mThread = CreateThread(0, 0, _threadWrapper, (LPVOID) ti, 0, 0);
 #else
   // Create the thread
   pthread_create(&mThread, NULL, _threadWrapper, (void *) ti);

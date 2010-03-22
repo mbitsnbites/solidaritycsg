@@ -23,11 +23,11 @@
 // This is a minimal, portable implementation of basic threading classes.
 //
 // They closely mimic the functionality and naming of the C++0x standard, and
-// should be fully replaceable with the corresponding std:: variants, once they
+// should be easily replaceable with the corresponding std:: variants, once they
 // are widely supported by compilers.
 //
 // The Win32 variant uses the native Win32 API for implementing the thread
-// classes, while for other systems, the POSIX threads API is used.
+// classes, while for other systems, the POSIX threads API (pthread) is used.
 //------------------------------------------------------------------------------
 
 #include "Platform.h"
@@ -172,9 +172,10 @@ class thread {
     ~thread()
     {
 #ifdef WIN32
+      TerminateThread(mThread, 0);
       CloseHandle(mThread);
 #else
-      // FIXME
+      pthread_kill(mThread, SIGKILL);
 #endif
     }
 
@@ -191,7 +192,6 @@ class thread {
   private:
 #ifdef WIN32
     HANDLE mThread;
-    DWORD mThreadID;
 #else
     pthread_t mThread;
 #endif
