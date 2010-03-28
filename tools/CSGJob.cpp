@@ -26,7 +26,7 @@
 
 
 using namespace std;
-using namespace tinythread;
+using namespace tthread;
 using namespace csg;
 using namespace os;
 
@@ -110,7 +110,7 @@ class CSGSlicePool {
         throw runtime_error("SampleSpace object undefined.");
 
       CSGSlice * result = 0;
-      mMutex.lock();
+      lock_guard<mutex> lock(mMutex);
       if(mNextID < mSampleSpace->mDiv[2])
       {
         int count = mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1];
@@ -118,16 +118,14 @@ class CSGSlicePool {
         mSlices.push_back(result);
         ++ mNextID;
       }
-      mMutex.unlock();
       return result;
     }
 
     /// Signal that the slice is done.
     void SliceDone(CSGSlice * aSlice)
     {
-      mMutex.lock();
+      lock_guard<mutex> lock(mMutex);
       aSlice->Done();
-      mMutex.unlock();
       mCondition.notify_all();
     }
 
@@ -136,7 +134,7 @@ class CSGSlicePool {
     /// until the corresponding slice is ready.
     CSGSlice * GetSlice(int aID)
     {
-      mMutex.lock();
+      lock_guard<mutex> lock(mMutex);
 
       // Start by finding the slice (wait until it is in the queue)
       CSGSlice * result = 0;
@@ -163,8 +161,6 @@ class CSGSlicePool {
 
       // Remove the slice from the list
       mSlices.erase(it);
-
-      mMutex.unlock();
 
       return result;
     }
@@ -309,7 +305,7 @@ void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
     CSGSlicePool slicePool;
     slicePool.SetSampleSpace(aSampleSpace);
     slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = number_of_cores() + 1;
+    int numThreads = number_of_processors();
     cout << "using " << (numThreads + 1) << " threads..." << flush;
     list<thread *> threads;
     for(int i = 0; i < numThreads; ++ i)

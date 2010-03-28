@@ -22,18 +22,38 @@ freely, subject to the following restrictions:
 */
 
 #include <exception>
-#include <unistd.h>
 #include "tinythread.h"
+#ifndef WIN32
+#include <unistd.h>
+#include <map>
+#endif
 
-namespace tinythread {
+
+namespace tthread {
+
+//------------------------------------------------------------------------------
+// id << operator
+//------------------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream &os, const tthread::id &obj)
+{
+  os << obj.mId;
+  return os;
+}
+
 
 //------------------------------------------------------------------------------
 // condition_variable
 //------------------------------------------------------------------------------
-// NOTE: The Win32 implementation of the condition_variable class is based on
+// NOTE 1: The Win32 implementation of the condition_variable class is based on
 // the corresponding implementation in GLFW, which in turn is based on a
 // description by Douglas C. Schmidt and Irfan Pyarali:
 // http://www.cs.wustl.edu/~schmidt/win32-cv-1.html
+//
+// NOTE 2: Windows Vista actually has native support for condition variables
+// (InitializeConditionVariable, WakeConditionVariable, etc), but we want to
+// be portable with pre-Vista Windows version, so TinyThread++ does not use
+// Vista condition variables.
 //------------------------------------------------------------------------------
 
 #ifdef WIN32
@@ -70,7 +90,7 @@ void condition_variable::wait(mutex &aMutex)
 
   // It's ok to release the mutex here since Win32 manual-reset events maintain
   // state when used with SetEvent()
-  LeaveCriticalSection(&aMutex.mMutex);
+  LeaveCriticalSection(&aMutex.mHandle);
 
   // Wait for either event to become signaled due to notify_one() or
   // notify_all() being called
@@ -88,7 +108,7 @@ void condition_variable::wait(mutex &aMutex)
     ResetEvent(mEvents[_CONDITION_EVENT_ALL]);
 
   // Reacquire the mutex
-  EnterCriticalSection(&aMutex.mMutex);
+  EnterCriticalSection(&aMutex.mHandle);
 }
 #endif
 
@@ -120,6 +140,34 @@ void condition_variable::notify_all()
 }
 #endif
 
+
+#ifndef WIN32
+
+//------------------------------------------------------------------------------
+// POSIX pthread_t to unique tinythread::id mapping logic.
+// Note: Here we use a global thread safe std:map to convert instances of
+// pthread_t to small thread identifier numbers (unique within one process).
+// This method should be portable across different POSIX implementations.
+//------------------------------------------------------------------------------
+
+// pthread_t -> ID map variables
+static mutex _gIdMapLock;
+static std::map<pthread_t, unsigned long int> _gIdMap;
+static unsigned long int _gIdCount(1);
+
+// This function converts a pthread_t "handle" to a unique thread id.
+static id _pthread_t_to_ID(const pthread_t &aHandle)
+{
+  lock_guard<mutex> guard(_gIdMapLock);
+  if(_gIdMap.find(aHandle) == _gIdMap.end())
+    _gIdMap[aHandle] = _gIdCount ++;
+  return id(_gIdMap[aHandle]);
+}
+
+#endif // !WIN32
+
+
+
 //------------------------------------------------------------------------------
 // thread
 //------------------------------------------------------------------------------
@@ -128,14 +176,11 @@ void condition_variable::notify_all()
 struct _ThreadStartInfo {
   void (*mFunction)(void *); ///< Pointer to the function to be executed.
   void * mArg;               ///< Function argument for the thread function.
+  thread * mThread;          ///< Pointer to the thread object.
 };
 
 // Thread wrapper function.
-#ifdef WIN32
-DWORD WINAPI _threadWrapper(LPVOID aArg)
-#else
-void * _threadWrapper(void * aArg)
-#endif
+void _thread_wrapper(void * aArg)
 {
   // Get thread startup information
   _ThreadStartInfo * ti = (_ThreadStartInfo *) aArg;
@@ -152,26 +197,107 @@ void * _threadWrapper(void * aArg)
     std::terminate();
   }
 
+  // The thread is no longer executing
+  lock_guard<mutex> guard(ti->mThread->mDataMutex);
+  ti->mThread->mNotAThread = true;
+
   // The thread is responsible for freeing the startup information
   delete ti;
+}
 
+// System specific thread wrapper function.
+#ifdef WIN32
+DWORD WINAPI _sys_thread_wrapper(LPVOID aArg)
+{
+  _thread_wrapper((void *) aArg);
   return 0;
 }
+#else
+void * _sys_thread_wrapper(void * aArg)
+{
+  _thread_wrapper(aArg);
+  return 0;
+}
+#endif
 
 thread::thread(void (*aFunction)(void *), void * aArg)
 {
+  // Serialize access to this thread structure
+  lock_guard<mutex> guard(mDataMutex);
+
   // Fill out the thread startup information (passed to the thread wrapper,
   // which will eventually free it)
   _ThreadStartInfo * ti = new _ThreadStartInfo;
   ti->mFunction = aFunction;
   ti->mArg = aArg;
+  ti->mThread = this;
+
+  // The thread is now alive
+  mNotAThread = false;
 
 #ifdef WIN32
   // Create the thread
-  mThread = CreateThread(0, 0, _threadWrapper, (LPVOID) ti, 0, 0);
+  mHandle = CreateThread(0, 0, _sys_thread_wrapper, (LPVOID) ti, 0, &mWi32ThreadID);
+  if(!mHandle)
+    mNotAThread = true;
 #else
   // Create the thread
-  pthread_create(&mThread, NULL, _threadWrapper, (void *) ti);
+  if(pthread_create(&mHandle, NULL, _sys_thread_wrapper, (void *) ti) != 0)
+  {
+    mHandle = 0;
+    mNotAThread = true;
+  }
+#endif
+}
+
+thread::~thread()
+{
+  if(joinable())
+    std::terminate();
+}
+
+void thread::join()
+{
+  if(joinable())
+  {
+#ifdef WIN32
+    WaitForSingleObject(mHandle, INFINITE);
+#else
+    pthread_join(mHandle, NULL);
+#endif
+  }
+}
+
+bool thread::joinable() const
+{
+  mDataMutex.lock();
+  bool result = !mNotAThread;
+  mDataMutex.unlock();
+  return result;
+}
+
+id thread::get_id() const
+{
+  if(!joinable())
+    return id();
+#ifdef WIN32
+  return id((unsigned long int) mWi32ThreadID);
+#else
+  return _pthread_t_to_ID(mHandle);
+#endif
+}
+
+
+//------------------------------------------------------------------------------
+// this_thread
+//------------------------------------------------------------------------------
+
+id this_thread::get_id()
+{
+#ifdef WIN32
+  return id((unsigned long int) GetCurrentThreadId());
+#else
+  return _pthread_t_to_ID(pthread_self());
 #endif
 }
 
@@ -180,20 +306,18 @@ thread::thread(void (*aFunction)(void *), void * aArg)
 // Misc. functions
 //------------------------------------------------------------------------------
 
-int number_of_cores()
+int number_of_processors()
 {
-#ifdef WIN32
+#if defined(WIN32)
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return (int) si.dwNumberOfProcessors;
+#elif defined(_SC_NPROCESSORS_ONLN)
+  return (int) sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(_SC_NPROC_ONLN)
+  return (int) sysconf(_SC_NPROC_ONLN);
 #else
-  #if defined(_SC_NPROCESSORS_ONLN)
-    return (int) sysconf(_SC_NPROCESSORS_ONLN);
-  #elif defined(_SC_NPROC_ONLN)
-    return (int) sysconf(_SC_NPROC_ONLN);
-  #else
-    return 1;
-  #endif
+  return 1;
 #endif
 }
 
