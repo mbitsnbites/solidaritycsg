@@ -1,3 +1,6 @@
+TinyThread++ v0.4
+=================
+
 About
 -----
 
@@ -7,23 +10,43 @@ make it easy to create multi threaded C++ applications.
 The library is closesly modeled after the current C++0x standard (draft), but
 only a subset is implemented at the moment.
 
-The library contains the following threading primitives: thread, mutex, and
-condition_variable.
+See the documentation in the doc/html directory for more information.
 
 
 Using TinyThread++
 ------------------
 
 To use TinyThread++ in your own project, just add tinythread.cpp and
-tinythread.h to your project.
+tinythread.h to your project. In your own code, do:
+
+#include <tinythread.h>
+using namespace tthread;
 
 
 History
 -------
 
+v0.4 - 2010.03.27
+  - Added thread::get_id() and this_thread::get_id().
+  - Changed the namespace name from tinythread to tthread.
+
+v0.3 - 2010.03.24
+  - Fixed a compiler error for fractal.cpp under MS Visual C++.
+  - Added colors to the fractal generator.
+
+v0.2 - 2010.03.23
+  - Better C++0x conformance.
+  - Better documentation.
+  - New classes:
+    - lock_guard
+  - New member functions:
+    - thread::joinable()
+    - thread::native_handle()
+    - mutex::try_lock()
+  - Added a multi threaded fractal generator test application.
+
 v0.1 - 2010.03.21
   - Initial release.
-
 
 
 License
