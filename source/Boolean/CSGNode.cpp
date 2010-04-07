@@ -182,6 +182,8 @@ bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX,
     {
       int minX, minY, maxX, maxY;
       bool nonEmpty = (*i)->ComposeSlice(&tmpSlice[0], aZ, minX, minY, maxX, maxY);
+
+      // Empty result?
       if((!nonEmpty) || (minX > aMaxX) || (maxX < aMinX) || (minY > aMaxY) ||
          (maxY < aMinY))
       {
@@ -197,19 +199,58 @@ bool CSGIntersection::ComposeSlice(Voxel * aSlice, int aZ, int &aMinX,
         aMinX = aMinY = aMaxX = aMaxY = 0;
         return false;
       }
-      if(minX > aMinX) aMinX = minX;
-      if(minY > aMinY) aMinY = minY;
-      if(maxX < aMaxX) aMaxX = maxX;
-      if(maxY < aMaxY) aMaxY = maxY;
-      for(int y = aMinY; y <= aMaxY; ++ y)
+
+      // New bounding rectangle
+      int newMinX = MAX(aMinX, minX);
+      int newMaxX = MIN(aMaxX, maxX);
+      int newMinY = MAX(aMinY, minY);
+      int newMaxY = MIN(aMaxY, maxY);
+
+      // Perform operation inside the new bounding rectangle, and fill with
+      // "outside" in the remaining part of the old bounding rectangle
+      for(int y = aMinY; y < newMinY; ++ y)
       {
         int idx = y * mSampleSpace->mDiv[0] + aMinX;
         for(int x = aMinX; x <= aMaxX; ++ x)
         {
-          aSlice[idx] = MIN(aSlice[idx], tmpSlice[idx]);
+          aSlice[idx] = -VOXEL_MAX;
           ++ idx;
         }
       }
+      for(int y = newMinY; y <= newMaxY; ++ y)
+      {
+        int idx = y * mSampleSpace->mDiv[0] + aMinX;
+        for(int x = aMinX; x < newMinX; ++ x)
+        {
+          aSlice[idx] = -VOXEL_MAX;
+          ++ idx;
+        }
+        for(int x = newMinX; x <= newMaxX; ++ x)
+        {
+          aSlice[idx] = MIN(aSlice[idx], tmpSlice[idx]);
+          ++ idx;
+        }
+        for(int x = newMaxX + 1; x <= aMaxX; ++ x)
+        {
+          aSlice[idx] = -VOXEL_MAX;
+          ++ idx;
+        }
+      }
+      for(int y = newMaxY + 1; y <= aMaxY; ++ y)
+      {
+        int idx = y * mSampleSpace->mDiv[0] + aMinX;
+        for(int x = aMinX; x <= aMaxX; ++ x)
+        {
+          aSlice[idx] = -VOXEL_MAX;
+          ++ idx;
+        }
+      }
+
+      // Use the new bounding rectangle
+      aMinX = newMinX;
+      aMaxX = newMaxX;
+      aMinY = newMinY;
+      aMaxY = newMaxX;
     }
     first = false;
   }
