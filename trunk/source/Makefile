@@ -41,6 +41,7 @@ STATICLIB = libsolidaritycsg.a
 OBJS = BoxVoxelize.o \
        SphereVoxelize.o \
        MeshVoxelize.o \
+       TriangleTree.o \
        TGAImageWriter.o \
        Mesh.o \
        STLMeshReader.o \
@@ -56,6 +57,7 @@ OBJS = BoxVoxelize.o \
 SRCS = Voxelize/BoxVoxelize.cpp \
        Voxelize/SphereVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
+       Voxelize/TriangleTree.cpp \
        FileIO/TGAImageWriter.cpp \
        FileIO/Mesh.cpp \
        FileIO/STLMeshReader.cpp \
