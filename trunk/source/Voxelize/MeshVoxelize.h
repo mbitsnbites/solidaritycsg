@@ -21,7 +21,6 @@
 #include "Voxelize.h"
 #include "TriangleTree.h"
 #include <vector>
-#include <list>
 
 namespace csg {
 
@@ -32,19 +31,13 @@ class Mesh;
 class MeshVoxelize : public Voxelize {
   public:
     /// Constructor.
-    MeshVoxelize()
-    {
-      mRectTree = 0;
-      mHeightTree = 0;
-    }
+    MeshVoxelize() : mAABBTree(0) {}
 
     /// Destructor.
     virtual ~MeshVoxelize()
     {
-      if(mRectTree)
-        delete mRectTree;
-      if(mHeightTree)
-        delete mHeightTree;
+      if(mAABBTree)
+        delete mAABBTree;
     }
 
     /// Define the triangle surface to be voxelized.
@@ -68,12 +61,6 @@ class MeshVoxelize : public Voxelize {
       int &aMaxX, int &aMaxY);
 
   private:
-    /// Build the 2D bounding rectangle tree (XY).
-    XYTreeNode * BuildRectangleTree(std::vector<XYTreeNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
-
-    /// Build the 1D bounding interval tree (Z).
-    ZTreeNode * BuildHeightTree(std::vector<ZTreeNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
-
     /// Draw a single line segment (triangle/plane intersection) to the slice.
     void DrawLineSegment(Voxel * aSlice, Vector3 &p1, Vector3 &p2);
 
@@ -86,11 +73,8 @@ class MeshVoxelize : public Voxelize {
     /// Vertex coordinates.
     std::vector<Vector3> mVertices;
 
-    /// 2D binary rectangle tree.
-    XYTreeNode * mRectTree;
-
-    /// 1D binary interval tree.
-    ZTreeNode * mHeightTree;
+    /// Binary bounding box tree.
+    AABBNode * mAABBTree;
 };
 
 }
