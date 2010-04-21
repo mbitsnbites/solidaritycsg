@@ -126,19 +126,23 @@ class AABBNode : public TreeNode {
       return (IntersectCount(aPoint) & 1) ? true : false;
     }
 
+    /// Return the bounding box for this node.
+    inline BoundingBox& GetAABB()
+    {
+      return mAABB;
+    }
+
   private:
     /// Calculate number of intersections with a positive Z ray starting at
     /// aPoint.
     int IntersectCount(Vector3 &aOrigin);
 
     BoundingBox mAABB; ///< Bounding box for this node
-
-    friend AABBNode * BuildAABBTree(std::vector<AABBNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
 };
 
 
-/// Build an AABB tree from a list of nodes.
-AABBNode * BuildAABBTree(std::vector<AABBNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
+/// Build an AABB tree from an array of triangles.
+AABBNode * BuildAABBTree(std::vector<Triangle> &aTriangles);
 
 
 }

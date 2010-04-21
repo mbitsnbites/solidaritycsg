@@ -79,22 +79,7 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
   }
 
   // Build the bounding box tree
-  vector<AABBNode *> aabbLeafNodes(mTriangles.size(), 0);
-  try
-  {
-    for(unsigned int i = 0; i < mTriangles.size(); ++ i)
-      aabbLeafNodes[i] = new AABBNode(&mTriangles[i]);
-    mAABBTree = BuildAABBTree(aabbLeafNodes, 0, aabbLeafNodes.size() - 1);
-  }
-  catch(...)
-  {
-    // If something went wrong, free all the leaf nodes
-    for(unsigned int i = 0; i < aabbLeafNodes.size(); ++ i)
-      if(aabbLeafNodes[i])
-        delete aabbLeafNodes[i];
-    throw;
-  }
-  aabbLeafNodes.clear();
+  mAABBTree = BuildAABBTree(mTriangles);
 }
 
 bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
