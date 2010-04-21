@@ -124,56 +124,70 @@ double Triangle::IntersectZRay(Vector3 &aOrigin)
 
 
 //-----------------------------------------------------------------------------
-// XYTreeNode
+// AABBNode
 //-----------------------------------------------------------------------------
 
-XYTreeNode::XYTreeNode(Triangle * aTriangle)
+AABBNode::AABBNode(Triangle * aTriangle)
 {
   // Set pointers
   mPtr1 = (void *) aTriangle;
   mPtr2 = 0;
 
-  // Calculate leaf node bounding rectangle
-  mMin[0] = mMax[0] = aTriangle->mVertices[0]->x;
-  mMin[1] = mMax[1] = aTriangle->mVertices[0]->y;
+  // Calculate leaf node bounding box
+  mAABB.mMin = mAABB.mMax = *aTriangle->mVertices[0];
   for(int i = 1; i <= 2; ++ i)
   {
-    if(aTriangle->mVertices[i]->x < mMin[0])
-      mMin[0] = aTriangle->mVertices[i]->x;
-    else if(aTriangle->mVertices[i]->x > mMax[0])
-      mMax[0] = aTriangle->mVertices[i]->x;
-    if(aTriangle->mVertices[i]->y < mMin[1])
-      mMin[1] = aTriangle->mVertices[i]->y;
-    else if(aTriangle->mVertices[i]->y > mMax[1])
-      mMax[1] = aTriangle->mVertices[i]->y;
+    if(aTriangle->mVertices[i]->x < mAABB.mMin.x)
+      mAABB.mMin.x = aTriangle->mVertices[i]->x;
+    else if(aTriangle->mVertices[i]->x > mAABB.mMax.x)
+      mAABB.mMax.x = aTriangle->mVertices[i]->x;
+    if(aTriangle->mVertices[i]->y < mAABB.mMin.y)
+      mAABB.mMin.y = aTriangle->mVertices[i]->y;
+    else if(aTriangle->mVertices[i]->y > mAABB.mMax.y)
+      mAABB.mMax.y = aTriangle->mVertices[i]->y;
+    if(aTriangle->mVertices[i]->z < mAABB.mMin.z)
+      mAABB.mMin.z = aTriangle->mVertices[i]->z;
+    else if(aTriangle->mVertices[i]->z > mAABB.mMax.z)
+      mAABB.mMax.z = aTriangle->mVertices[i]->z;
   }
 }
 
-XYTreeNode::XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB)
+AABBNode::AABBNode(AABBNode * aChildA, AABBNode * aChildB)
 {
   // Set pointers
   mPtr1 = (void *) aChildA;
   mPtr2 = (void *) aChildB;
 
-  // Calculate node bounding rectangle
-  for(int i = 0; i < 2; ++ i)
+  // Calculate node bounding box
+  mAABB = aChildA->mAABB;
+  mAABB.Union(aChildB->mAABB);
+}
+
+void AABBNode::IntersectingTriangles(double aZ, list<Triangle *> &aList)
+{
+  // Is the plane outside of the bounding interval?
+  if((aZ < mAABB.mMin.z) || (aZ > mAABB.mMax.z))
+    return;
+
+  Triangle * tri = LeafItem();
+  if(tri)
   {
-    if(aChildA->mMin[i] < aChildB->mMin[i])
-      mMin[i] = aChildA->mMin[i];
-    else
-      mMin[i] = aChildB->mMin[i];
-    if(aChildA->mMax[i] > aChildB->mMax[i])
-      mMax[i] = aChildA->mMax[i];
-    else
-      mMax[i] = aChildB->mMax[i];
+    // Add this triangle to the list
+    aList.push_back(tri);
+  }
+  else
+  {
+    // Continue to recurse into the child branches
+    ((AABBNode *) mPtr1)->IntersectingTriangles(aZ, aList);
+    ((AABBNode *) mPtr2)->IntersectingTriangles(aZ, aList);
   }
 }
 
-int XYTreeNode::IntersectCount(Vector3 &aOrigin)
+int AABBNode::IntersectCount(Vector3 &aOrigin)
 {
   // Is the origin outside of the bounding rectangle?
-  if(((aOrigin.x < mMin[0]) || (aOrigin.x > mMax[0]) ||
-      (aOrigin.y < mMin[1]) || (aOrigin.y > mMax[1])))
+  if(((aOrigin.x < mAABB.mMin.x) || (aOrigin.x > mAABB.mMax.x) ||
+      (aOrigin.y < mAABB.mMin.y) || (aOrigin.y > mAABB.mMax.y)))
     return 0;
 
   Triangle * tri = LeafItem();
@@ -186,67 +200,58 @@ int XYTreeNode::IntersectCount(Vector3 &aOrigin)
   else
   {
     // Calculate sums of the number of intersections in the child branches...
-    return ((XYTreeNode *) mPtr1)->IntersectCount(aOrigin) +
-           ((XYTreeNode *) mPtr2)->IntersectCount(aOrigin);
+    return ((AABBNode *) mPtr1)->IntersectCount(aOrigin) +
+           ((AABBNode *) mPtr2)->IntersectCount(aOrigin);
   }
 }
 
-//-----------------------------------------------------------------------------
-// ZTreeNode
-//-----------------------------------------------------------------------------
-
-ZTreeNode::ZTreeNode(Triangle * aTriangle)
+AABBNode * BuildAABBTree(vector<AABBNode *> &aNodes, unsigned int aStart,
+  unsigned int aEnd)
 {
-  // Set pointers
-  mPtr1 = (void *) aTriangle;
-  mPtr2 = 0;
-
-  // Calculate leaf node bounding interval
-  mMinZ = mMaxZ = aTriangle->mVertices[0]->z;
-  for(int i = 1; i <= 2; ++ i)
+  // Leaf node?
+  if(aStart == aEnd)
   {
-    if(aTriangle->mVertices[i]->z < mMinZ)
-      mMinZ = aTriangle->mVertices[i]->z;
-    else if(aTriangle->mVertices[i]->z > mMaxZ)
-      mMaxZ = aTriangle->mVertices[i]->z;
+    return aNodes[aStart];
   }
+
+  // Calculate the combined bounding box for all the nodes in the array
+  BoundingBox aabb = aNodes[aStart]->mAABB;
+  for(unsigned int i = aStart + 1; i <= aEnd; ++ i)
+    aabb.Union(aNodes[i]->mAABB);
+
+  // Optimal split axis (split along X, Y or Z?)
+  int axis = 0;
+  if((aabb.mMax[1] - aabb.mMin[1]) > (aabb.mMax[0] - aabb.mMin[0]))
+    axis = 1;
+  if((aabb.mMax[2] - aabb.mMin[2]) > (aabb.mMax[axis] - aabb.mMin[axis]))
+    axis = 2;
+
+  // Partition the nodes array into the A and B branches of the new node
+  double mid2 = aabb.mMin[axis] + aabb.mMax[axis];
+  unsigned int storeIdx = aStart;
+  AABBNode * tmp;
+  for(unsigned int i = aStart; i <= aEnd; ++ i)
+  {
+    if((aNodes[i]->mAABB.mMin[axis] + aNodes[i]->mAABB.mMax[axis]) < mid2)
+    {
+      tmp = aNodes[storeIdx];
+      aNodes[storeIdx] = aNodes[i];
+      aNodes[i] = tmp;
+      ++ storeIdx;
+    }
+  }
+
+  // If we had a degenerate case, just split in half
+  if((storeIdx == aStart) || (storeIdx > aEnd))
+    storeIdx = (aStart + 1 + aEnd) / 2;
+
+  // Recursively build the child branches
+  AABBNode * childA = BuildAABBTree(aNodes, aStart, storeIdx - 1);
+  AABBNode * childB = BuildAABBTree(aNodes, storeIdx, aEnd);
+
+  // Create a new node, based on the A & B children
+  return new AABBNode(childA, childB);
 }
 
-ZTreeNode::ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB)
-{
-  // Set pointers
-  mPtr1 = (void *) aChildA;
-  mPtr2 = (void *) aChildB;
-
-  // Calculate node bounding interval
-  if(aChildA->mMinZ < aChildB->mMinZ)
-    mMinZ = aChildA->mMinZ;
-  else
-    mMinZ = aChildB->mMinZ;
-  if(aChildA->mMaxZ > aChildB->mMaxZ)
-    mMaxZ = aChildA->mMaxZ;
-  else
-    mMaxZ = aChildB->mMaxZ;
-}
-
-void ZTreeNode::IntersectingTriangles(double aZ, list<Triangle *> &aList)
-{
-  // Is the plane outside of the bounding interval?
-  if((aZ < mMinZ) || (aZ > mMaxZ))
-    return;
-
-  Triangle * tri = LeafItem();
-  if(tri)
-  {
-    // Add this triangle to the list
-    aList.push_back(tri);
-  }
-  else
-  {
-    // Continue to recurse into the child branches
-    ((ZTreeNode *) mPtr1)->IntersectingTriangles(aZ, aList);
-    ((ZTreeNode *) mPtr2)->IntersectingTriangles(aZ, aList);
-  }
-}
 
 }

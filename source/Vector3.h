@@ -45,6 +45,11 @@ class Vector3 {
       x = a.x; y = a.y; z = a.z;
     }
 
+    inline double& operator[](unsigned int aIdx) const
+    {
+      return ((double *) &x)[aIdx];
+    }
+
     inline Vector3 operator+(const Vector3 &v) const
     {
       return Vector3(x + v.x,  y + v.y,  z + v.z);

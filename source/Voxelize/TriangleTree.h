@@ -19,6 +19,8 @@
 #define _TRIANGLETREE_H_
 
 #include "../Vector3.h"
+#include "../BoundingBox.h"
+#include <vector>
 #include <list>
 
 namespace csg {
@@ -50,8 +52,7 @@ class Triangle {
     Vector3 * mVertices[3]; ///< Pointers to the actual vertex coordinates.
     Vector3 mNormal;        ///< Triangle normal (out direction).
 
-    friend class XYTreeNode;
-    friend class ZTreeNode;
+    friend class AABBNode;
 };
 
 
@@ -59,10 +60,7 @@ class Triangle {
 class TreeNode {
   public:
     /// Generic constructor (for uninitialized nodes).
-    TreeNode()
-    {
-      mPtr1 = mPtr2 = 0;
-    }
+    TreeNode() : mPtr1(0), mPtr2(0) {}
 
     /// Destructor (recursively destroys all child nodes).
     ~TreeNode()
@@ -109,14 +107,17 @@ class TreeNode {
     void * mPtr2;   ///< Pointer to child B, or zero (for leaf nodes)
 };
 
-/// Bounding rectangle tree node class.
-class XYTreeNode : public TreeNode {
+/// Axis aligned bounding box tree node class.
+class AABBNode : public TreeNode {
   public:
     /// Constructor for leaf nodes.
-    XYTreeNode(Triangle * aTriangle);
+    AABBNode(Triangle * aTriangle);
 
     /// Constructor for parent nodes.
-    XYTreeNode(XYTreeNode * aChildA, XYTreeNode * aChildB);
+    AABBNode(AABBNode * aChildA, AABBNode * aChildB);
+
+    /// Generate a list of all triangles that intersect the given XY plane.
+    void IntersectingTriangles(double aZ, std::list<Triangle *> &aList);
 
     /// Check if a point is inside or outside of the triangle volume. Note
     /// that this method only makes sense for the root node of the tree.
@@ -130,30 +131,15 @@ class XYTreeNode : public TreeNode {
     /// aPoint.
     int IntersectCount(Vector3 &aOrigin);
 
-    double mMin[2]; ///< Lower bound
-    double mMax[2]; ///< Upper bound
+    BoundingBox mAABB; ///< Bounding box for this node
 
-    friend class MeshVoxelize;
+    friend AABBNode * BuildAABBTree(std::vector<AABBNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
 };
 
-/// Bounding interval tree node class.
-class ZTreeNode : public TreeNode {
-  public:
-    /// Constructor for leaf nodes.
-    ZTreeNode(Triangle * aTriangle);
 
-    /// Constructor for parent nodes.
-    ZTreeNode(ZTreeNode * aChildA, ZTreeNode * aChildB);
+/// Build an AABB tree from a list of nodes.
+AABBNode * BuildAABBTree(std::vector<AABBNode *> &aNodes, unsigned int aStart, unsigned int aEnd);
 
-    /// Generate a list of all triangles that intersect the given XY plane.
-    void IntersectingTriangles(double aZ, std::list<Triangle *> &aList);
-
-  private:
-    double mMinZ;   ///< Lower bound
-    double mMaxZ;   ///< Upper bound
-
-    friend class MeshVoxelize;
-};
 
 }
 

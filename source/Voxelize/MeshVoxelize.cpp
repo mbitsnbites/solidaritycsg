@@ -78,143 +78,23 @@ void MeshVoxelize::SetTriangles(int aTriangleCount, int * aIndices,
     iPtr += 3;
   }
 
-  // Build the 2D bounding rectangle tree (XY)
-  vector<XYTreeNode *> rectLeafNodes(mTriangles.size(), 0);
+  // Build the bounding box tree
+  vector<AABBNode *> aabbLeafNodes(mTriangles.size(), 0);
   try
   {
     for(unsigned int i = 0; i < mTriangles.size(); ++ i)
-      rectLeafNodes[i] = new XYTreeNode(&mTriangles[i]);
-    mRectTree = BuildRectangleTree(rectLeafNodes, 0, rectLeafNodes.size() - 1);
+      aabbLeafNodes[i] = new AABBNode(&mTriangles[i]);
+    mAABBTree = BuildAABBTree(aabbLeafNodes, 0, aabbLeafNodes.size() - 1);
   }
   catch(...)
   {
     // If something went wrong, free all the leaf nodes
-    for(unsigned int i = 0; i < rectLeafNodes.size(); ++ i)
-      if(rectLeafNodes[i])
-        delete rectLeafNodes[i];
+    for(unsigned int i = 0; i < aabbLeafNodes.size(); ++ i)
+      if(aabbLeafNodes[i])
+        delete aabbLeafNodes[i];
     throw;
   }
-  rectLeafNodes.clear();
-
-  // Build the 1D bounding interval tree (Z)
-  vector<ZTreeNode *> heightLeafNodes(mTriangles.size(), 0);
-  try
-  {
-    for(unsigned int i = 0; i < mTriangles.size(); ++ i)
-      heightLeafNodes[i] = new ZTreeNode(&mTriangles[i]);
-    mHeightTree = BuildHeightTree(heightLeafNodes, 0, heightLeafNodes.size() - 1);
-  }
-  catch(...)
-  {
-    // If something went wrong, free all the leaf nodes
-    for(unsigned int i = 0; i < heightLeafNodes.size(); ++ i)
-      if(heightLeafNodes[i])
-        delete heightLeafNodes[i];
-    throw;
-  }
-  heightLeafNodes.clear();
-}
-
-XYTreeNode * MeshVoxelize::BuildRectangleTree(vector<XYTreeNode *> &aNodes,
-  unsigned int aStart, unsigned int aEnd)
-{
-  // Leaf node?
-  if(aStart == aEnd)
-  {
-    return aNodes[aStart];
-  }
-
-  // Calculate the combined bounding rectangle for all the nodes in the array
-  double min[2], max[2];
-  min[0] = aNodes[aStart]->mMin[0];
-  min[1] = aNodes[aStart]->mMin[1];
-  max[0] = aNodes[aStart]->mMax[0];
-  max[1] = aNodes[aStart]->mMax[1];
-  for(unsigned int i = aStart + 1; i <= aEnd; ++ i)
-  {
-    for(int j = 0; j < 2; ++ j)
-    {
-      if(aNodes[i]->mMin[j] < min[j])
-        min[j] = aNodes[i]->mMin[j];
-      if(aNodes[i]->mMax[j] > max[j])
-        max[j] = aNodes[i]->mMax[j];
-    }
-  }
-
-  // Optimal split axis (split along X or along Y?)
-  int axis = ((max[1] - min[1]) > (max[0] - min[0])) ? 1 : 0;
-
-  // Partition the nodes array into the A and B branches of the new node
-  double mid2 = min[axis] + max[axis];
-  unsigned int storeIdx = aStart;
-  XYTreeNode * tmp;
-  for(unsigned int i = aStart; i <= aEnd; ++ i)
-  {
-    if((aNodes[i]->mMin[axis] + aNodes[i]->mMax[axis]) < mid2)
-    {
-      tmp = aNodes[storeIdx];
-      aNodes[storeIdx] = aNodes[i];
-      aNodes[i] = tmp;
-      ++ storeIdx;
-    }
-  }
-
-  // If we had a degenerate case, just split in half
-  if((storeIdx == aStart) || (storeIdx > aEnd))
-    storeIdx = (aStart + 1 + aEnd) / 2;
-
-  // Recursively build the child branches
-  XYTreeNode * childA = BuildRectangleTree(aNodes, aStart, storeIdx - 1);
-  XYTreeNode * childB = BuildRectangleTree(aNodes, storeIdx, aEnd);
-
-  // Create a new node, based on the A & B children
-  return new XYTreeNode(childA, childB);
-}
-
-ZTreeNode * MeshVoxelize::BuildHeightTree(vector<ZTreeNode *> &aNodes,
-  unsigned int aStart, unsigned int aEnd)
-{
-  // Leaf node?
-  if(aStart == aEnd)
-    return aNodes[aStart];
-
-  // Calculate the combined bounding interval for all the nodes in the array
-  double minZ, maxZ;
-  minZ = aNodes[aStart]->mMinZ;
-  maxZ = aNodes[aStart]->mMaxZ;
-  for(unsigned int i = aStart + 1; i <= aEnd; ++ i)
-  {
-    if(aNodes[i]->mMinZ < minZ)
-      minZ = aNodes[i]->mMinZ;
-    if(aNodes[i]->mMaxZ > maxZ)
-      maxZ = aNodes[i]->mMaxZ;
-  }
-
-  // Partition the nodes array into the A and B branches of the new node
-  double mid2 = minZ + maxZ;
-  unsigned int storeIdx = aStart;
-  ZTreeNode * tmp;
-  for(unsigned int i = aStart; i <= aEnd; ++ i)
-  {
-    if((aNodes[i]->mMinZ + aNodes[i]->mMaxZ) < mid2)
-    {
-      tmp = aNodes[storeIdx];
-      aNodes[storeIdx] = aNodes[i];
-      aNodes[i] = tmp;
-      ++ storeIdx;
-    }
-  }
-
-  // If we had a degenerate case, just split in half
-  if((storeIdx == aStart) || (storeIdx > aEnd))
-    storeIdx = (aStart + 1 + aEnd) / 2;
-
-  // Recursively build the child branches
-  ZTreeNode * childA = BuildHeightTree(aNodes, aStart, storeIdx - 1);
-  ZTreeNode * childB = BuildHeightTree(aNodes, storeIdx, aEnd);
-
-  // Create a new node, based on the A & B children
-  return new ZTreeNode(childA, childB);
+  aabbLeafNodes.clear();
 }
 
 bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
@@ -225,7 +105,7 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
     throw runtime_error("Undefined/invalid voxel space dimensions.");
 
   // Check that the mesh has been properly set up
-  if(!mRectTree || !mHeightTree)
+  if(!mAABBTree)
     throw runtime_error("Undefined triangle mesh.");
 
   // Calculate the slice plane Z value
@@ -234,7 +114,7 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
 
   // Get all intersecting triangles
   list<Triangle *> triList;
-  mHeightTree->IntersectingTriangles(planeZ, triList);
+  mAABBTree->IntersectingTriangles(planeZ, triList);
 
   // Keep track of the bounding rectangle for the intersection in this slice
   double min[2], max[2];
@@ -337,7 +217,7 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
         p.z = planeZ;
 
         // Point outside? If so, flip sign...
-        if(!mRectTree->PointInside(p))
+        if(!mAABBTree->PointInside(p))
           *ptr = -value;
       }
       ++ ptr;
@@ -359,7 +239,7 @@ bool MeshVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
         p.z = planeZ;
 
         // Check if the voxel is inside or outside of the triangle mesh
-        Voxel value = mRectTree->PointInside(p) ? VOXEL_MAX : -VOXEL_MAX;
+        Voxel value = mAABBTree->PointInside(p) ? VOXEL_MAX : -VOXEL_MAX;
 
         // Flood fill from this voxel
         FloodFill(aSlice, x, y, value);
