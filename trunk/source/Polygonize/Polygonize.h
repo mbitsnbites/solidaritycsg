@@ -24,8 +24,6 @@
 
 namespace csg {
 
-class Cube;
-
 /// Polygonize class.
 class Polygonize {
   public:
