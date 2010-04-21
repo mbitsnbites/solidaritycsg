@@ -205,8 +205,14 @@ int AABBNode::IntersectCount(Vector3 &aOrigin)
   }
 }
 
-AABBNode * BuildAABBTree(vector<AABBNode *> &aNodes, unsigned int aStart,
-  unsigned int aEnd)
+
+//-----------------------------------------------------------------------------
+// AABBNode tree building routines.
+//-----------------------------------------------------------------------------
+
+/// Recursively build an AABB tree.
+static AABBNode * RecBuildAABBTree(vector<AABBNode *> &aNodes,
+  unsigned int aStart, unsigned int aEnd)
 {
   // Leaf node?
   if(aStart == aEnd)
@@ -215,9 +221,9 @@ AABBNode * BuildAABBTree(vector<AABBNode *> &aNodes, unsigned int aStart,
   }
 
   // Calculate the combined bounding box for all the nodes in the array
-  BoundingBox aabb = aNodes[aStart]->mAABB;
+  BoundingBox aabb = aNodes[aStart]->GetAABB();
   for(unsigned int i = aStart + 1; i <= aEnd; ++ i)
-    aabb.Union(aNodes[i]->mAABB);
+    aabb.Union(aNodes[i]->GetAABB());
 
   // Optimal split axis (split along X, Y or Z?)
   int axis = 0;
@@ -232,7 +238,8 @@ AABBNode * BuildAABBTree(vector<AABBNode *> &aNodes, unsigned int aStart,
   AABBNode * tmp;
   for(unsigned int i = aStart; i <= aEnd; ++ i)
   {
-    if((aNodes[i]->mAABB.mMin[axis] + aNodes[i]->mAABB.mMax[axis]) < mid2)
+    BoundingBox &nodeABBB = aNodes[i]->GetAABB();
+    if((nodeABBB.mMin[axis] + nodeABBB.mMax[axis]) < mid2)
     {
       tmp = aNodes[storeIdx];
       aNodes[storeIdx] = aNodes[i];
@@ -246,12 +253,34 @@ AABBNode * BuildAABBTree(vector<AABBNode *> &aNodes, unsigned int aStart,
     storeIdx = (aStart + 1 + aEnd) / 2;
 
   // Recursively build the child branches
-  AABBNode * childA = BuildAABBTree(aNodes, aStart, storeIdx - 1);
-  AABBNode * childB = BuildAABBTree(aNodes, storeIdx, aEnd);
+  AABBNode * childA = RecBuildAABBTree(aNodes, aStart, storeIdx - 1);
+  AABBNode * childB = RecBuildAABBTree(aNodes, storeIdx, aEnd);
 
   // Create a new node, based on the A & B children
   return new AABBNode(childA, childB);
 }
 
+AABBNode * BuildAABBTree(std::vector<Triangle> &aTriangles)
+{
+  AABBNode * result = 0;
+  vector<AABBNode *> aabbLeafNodes(aTriangles.size(), 0);
+  try
+  {
+    for(unsigned int i = 0; i < aTriangles.size(); ++ i)
+      aabbLeafNodes[i] = new AABBNode(&aTriangles[i]);
+    result = RecBuildAABBTree(aabbLeafNodes, 0, aabbLeafNodes.size() - 1);
+  }
+  catch(...)
+  {
+    // If something went wrong, free all the leaf nodes
+    for(unsigned int i = 0; i < aabbLeafNodes.size(); ++ i)
+      if(aabbLeafNodes[i])
+        delete aabbLeafNodes[i];
+    throw;
+  }
+  aabbLeafNodes.clear();
+
+  return result;
+}
 
 }
