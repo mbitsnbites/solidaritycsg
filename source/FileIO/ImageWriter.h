@@ -18,7 +18,7 @@
 #ifndef _IMAGEWRITER_H_
 #define _IMAGEWRITER_H_
 
-#include "../Voxelize/Voxelize.h"
+#include "../SampleSpace.h"
 
 namespace csg {
 
