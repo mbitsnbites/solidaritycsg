@@ -12,12 +12,13 @@ MeshVoxelize.o: Voxelize/MeshVoxelize.cpp Voxelize/MeshVoxelize.h \
  Voxelize/../BoundingBox.h Voxelize/TriangleTree.h \
  Voxelize/../FileIO/Mesh.h Voxelize/../FileIO/../Vector3.h \
  Voxelize/../Array.h
-TriangleTree.o: Voxelize/TriangleTree.cpp Voxelize/TriangleTree.h
+TriangleTree.o: Voxelize/TriangleTree.cpp Voxelize/TriangleTree.h \
+ Voxelize/../Vector3.h Voxelize/../BoundingBox.h Voxelize/../Vector3.h
 TGAImageWriter.o: FileIO/TGAImageWriter.cpp FileIO/TGAImageWriter.h \
- FileIO/ImageWriter.h FileIO/../Voxelize/Voxelize.h \
- FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../BoundingBox.h \
- FileIO/../Voxelize/../Vector3.h FileIO/../Voxelize/../SampleSpace.h \
- FileIO/../Voxelize/../BoundingBox.h
+ FileIO/ImageWriter.h FileIO/../SampleSpace.h FileIO/../Vector3.h \
+ FileIO/../BoundingBox.h
+Curver.o: FileIO/Curver.cpp FileIO/Curver.h FileIO/../SampleSpace.h \
+ FileIO/../Vector3.h FileIO/../BoundingBox.h
 Mesh.o: FileIO/Mesh.cpp FileIO/Mesh.h FileIO/../Vector3.h
 STLMeshReader.o: FileIO/STLMeshReader.cpp FileIO/STLMeshReader.h \
  FileIO/MeshReader.h FileIO/Mesh.h FileIO/../Vector3.h

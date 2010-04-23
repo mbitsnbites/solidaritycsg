@@ -20,8 +20,10 @@
 
 // This is the master include file, so include everything...
 #include "Voxelize/MeshVoxelize.h"
-#include "Voxelize/SphereVoxelize.h"
 #include "Voxelize/BoxVoxelize.h"
+#include "Voxelize/SphereVoxelize.h"
+#include "Voxelize/TriangleTree.h"
+#include "FileIO/Curver.h"
 #include "FileIO/Mesh.h"
 #include "FileIO/TGAImageWriter.h"
 #include "FileIO/STLMeshReader.h"
