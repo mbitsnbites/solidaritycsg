@@ -43,6 +43,7 @@ OBJS = BoxVoxelize.o \
        MeshVoxelize.o \
        TriangleTree.o \
        TGAImageWriter.o \
+       Curver.o \
        Mesh.o \
        STLMeshReader.o \
        STLMeshWriter.o \
@@ -59,6 +60,7 @@ SRCS = Voxelize/BoxVoxelize.cpp \
        Voxelize/MeshVoxelize.cpp \
        Voxelize/TriangleTree.cpp \
        FileIO/TGAImageWriter.cpp \
+       FileIO/Curver.cpp \
        FileIO/Mesh.cpp \
        FileIO/STLMeshReader.cpp \
        FileIO/STLMeshWriter.cpp \
