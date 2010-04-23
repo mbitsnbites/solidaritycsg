@@ -74,13 +74,19 @@ class Point {
 class Contour {
   public:
     /// Check if the countour is an exterior.
-    /// Any contour that is counter clockwise oriented is considered exterior.
+    /// Any contour that is clockwise oriented is considered exterior.
     bool IsExterior();
 
     /// Return the number of points in the contour.
-    inline unsigned int Count()
+    inline unsigned int Size()
     {
       return mPoints.size();
+    }
+
+    /// Set the number of points in the contour.
+    inline void ReSize(unsigned int aNewSize)
+    {
+      mPoints.resize(aNewSize);
     }
 
     inline Point& operator[](unsigned int aIdx)
@@ -92,7 +98,7 @@ class Contour {
     std::vector<Point> mPoints;
 };
 
-/// Bitmap to curve converter.
+/// Voxel slice to curve converter.
 /// This class implements the marching squares algorithm, and generates
 /// separated closed contours from a voxel slice.
 class Curver {
@@ -110,7 +116,8 @@ class Curver {
     }
 
     /// Make contours from a slice.
-    /// @note The sample space must have been defined first (see SetSampleSpace).
+    /// @note The sample space must have been defined first
+    /// @see SetSampleSpace()
     void MakeContours(Voxel * aSlice);
 
   private:
