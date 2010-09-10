@@ -251,110 +251,107 @@ void CSGJob::LoadFromXML(const char * aFileName)
 void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
   ImageWriter * aImageWriter)
 {
-    cout << "single threaded..." << flush;
+  cout << "single threaded..." << flush;
 
-    // Allocate memory for two slices
-    vector<Voxel> voxelSlice1, voxelSlice2;
-    voxelSlice1.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
-    voxelSlice2.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
-    Voxel * slice = &voxelSlice1[0];
-    Voxel * sliceOld = &voxelSlice2[0];
+  // Allocate memory for two slices
+  vector<Voxel> voxelSlice1, voxelSlice2;
+  voxelSlice1.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
+  voxelSlice2.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
+  Voxel * slice = &voxelSlice1[0];
+  Voxel * sliceOld = &voxelSlice2[0];
 
-    // Iterate all slices and produce output data
-    for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
+  // Iterate all slices and produce output data
+  for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
+  {
+    // Get the next slice
+    mCSGRoot->CalculateSlice(slice, i);
+
+    // Write slice image or genereate mesh triangles?
+    if(mOutputType == otSlices)
     {
-      // Get the next slice
-      mCSGRoot->CalculateSlice(slice, i);
+      // Construct file name for the slice
+      stringstream name;
+      name << mOutputFileName;
+      name.fill('0');
+      name.width(5);
+      name << i;
+      name.width(0);
+      if(mOutputFormat == ofTGA)
+        name << ".tga";
 
-      // Write slice image or genereate mesh triangles?
-      if(mOutputType == otSlices)
-      {
-        // Construct file name for the slice
-        stringstream name;
-        name << mOutputFileName;
-        name.fill('0');
-        name.width(5);
-        name << i;
-        name.width(0);
-        if(mOutputFormat == ofTGA)
-          name << ".tga";
-
-        // Write this file to disk
-        aImageWriter->SaveToFile(name.str().c_str(), slice, i);
-      }
-      else if(mOutputType == otMesh)
-      {
-        if(i > 0)
-          aPolygonize->AppendSlicePair(sliceOld, slice, i - 1);
-      }
-
-      // Swap slice buffers
-      Voxel * tmp = sliceOld;
-      sliceOld = slice;
-      slice = tmp;
+      // Write this file to disk
+      aImageWriter->SaveToFile(name.str().c_str(), slice, i);
+    }
+    else if(mOutputType == otMesh)
+    {
+      if(i > 0)
+        aPolygonize->AppendSlicePair(sliceOld, slice, i - 1);
     }
 
-    if(sliceOld)
-      delete sliceOld;
+    // Swap slice buffers
+    Voxel * tmp = sliceOld;
+    sliceOld = slice;
+    slice = tmp;
+  }
 }
 
 void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
   ImageWriter * aImageWriter)
 {
-    // Start slice calculation threads
-    CSGSlicePool slicePool;
-    slicePool.SetSampleSpace(aSampleSpace);
-    slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = thread::hardware_concurrency();
-    if(numThreads < 1)
-      numThreads = 1;
-    cout << "using " << (numThreads + 1) << " threads..." << flush;
-    list<thread *> threads;
-    for(int i = 0; i < numThreads; ++ i)
-      threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
-    CSGSlice * slice, * sliceOld = 0;
+  // Start slice calculation threads
+  CSGSlicePool slicePool;
+  slicePool.SetSampleSpace(aSampleSpace);
+  slicePool.mCSGRoot = mCSGRoot;
+  int numThreads = thread::hardware_concurrency();
+  if(numThreads < 1)
+    numThreads = 1;
+  cout << "using " << (numThreads + 1) << " threads..." << flush;
+  list<thread *> threads;
+  for(int i = 0; i < numThreads; ++ i)
+    threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
+  CSGSlice * slice, * sliceOld = 0;
 
-    // Iterate all slices and produce output data
-    for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
+  // Iterate all slices and produce output data
+  for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
+  {
+    // Get the next slice
+    slice = slicePool.GetSlice(i);
+
+    // Write slice image or genereate mesh triangles?
+    if(mOutputType == otSlices)
     {
-      // Get the next slice
-      slice = slicePool.GetSlice(i);
+      // Construct file name for the slice
+      stringstream name;
+      name << mOutputFileName;
+      name.fill('0');
+      name.width(5);
+      name << i;
+      name.width(0);
+      if(mOutputFormat == ofTGA)
+        name << ".tga";
 
-      // Write slice image or genereate mesh triangles?
-      if(mOutputType == otSlices)
-      {
-        // Construct file name for the slice
-        stringstream name;
-        name << mOutputFileName;
-        name.fill('0');
-        name.width(5);
-        name << i;
-        name.width(0);
-        if(mOutputFormat == ofTGA)
-          name << ".tga";
-
-        // Write this file to disk
-        aImageWriter->SaveToFile(name.str().c_str(), slice->Data(), i);
-      }
-      else if(mOutputType == otMesh)
-      {
-        if(i > 0)
-          aPolygonize->AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
-      }
-
-      // Swap slice buffers
-      if(sliceOld)
-        delete sliceOld;
-      sliceOld = slice;
+      // Write this file to disk
+      aImageWriter->SaveToFile(name.str().c_str(), slice->Data(), i);
+    }
+    else if(mOutputType == otMesh)
+    {
+      if(i > 0)
+        aPolygonize->AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
     }
 
-    // Delete threads
-    for(list<thread *>::iterator i = threads.begin(); i != threads.end(); ++ i)
-    {
-      thread * t = *i;
-      t->join();
-      delete t;
-    }
+    // Swap slice buffers
+    if(sliceOld)
+      delete sliceOld;
+    sliceOld = slice;
+  }
+
+  // Delete threads
+  for(list<thread *>::iterator i = threads.begin(); i != threads.end(); ++ i)
+  {
+    thread * t = *i;
+    t->join();
+    delete t;
+  }
 }
 
 void CSGJob::Execute(OperationMode aOperationMode)
