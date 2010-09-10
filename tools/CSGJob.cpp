@@ -305,7 +305,9 @@ void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
     CSGSlicePool slicePool;
     slicePool.SetSampleSpace(aSampleSpace);
     slicePool.mCSGRoot = mCSGRoot;
-    int numThreads = number_of_processors();
+    int numThreads = thread::hardware_concurrency();
+    if(numThreads < 1)
+      numThreads = 1;
     cout << "using " << (numThreads + 1) << " threads..." << flush;
     list<thread *> threads;
     for(int i = 0; i < numThreads; ++ i)
