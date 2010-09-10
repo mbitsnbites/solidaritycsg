@@ -24,29 +24,7 @@ freely, subject to the following restrictions:
 #ifndef _TINYTHREAD_H_
 #define _TINYTHREAD_H_
 
-// Which platform are we on?
-#if !defined(WIN32) && defined(_WIN32)
-  #define WIN32
-#endif
-
-// Platform specific includes
-#ifdef WIN32
-  #include <windows.h>
-#else
-  #include <pthread.h>
-  #include <signal.h>
-#endif
-
-// Generic includes
-#include <ostream>
-
-// TinyThread++ version
-#define TINYTHREAD_VERSION_MAJOR 0
-#define TINYTHREAD_VERSION_MINOR 4
-
-
-namespace tthread {
-
+/// @file
 /// @mainpage TinyThread++ API Reference
 ///
 /// @section intro_sec Introduction
@@ -61,11 +39,86 @@ namespace tthread {
 /// classes, while for other systems, the POSIX threads API (pthread) is used.
 ///
 /// @section class_sec Classes
-/// There are four classes that are implemented: thread, mutex, lock_guard and
-/// condition_variable.
+/// In order to mimic the threading API of the C++0x standard, subsets of
+/// several classes are provided. The fundamental classes are:
+/// @li tthread::thread
+/// @li tthread::mutex
+/// @li tthread::condition_variable
+/// @li tthread::lock_guard
+/// @li tthread::fast_mutex
 ///
 /// @section misc_sec Miscellaneous
-/// The following additional functions are available: number_of_processors().
+/// The following special keywords are available: #thread_local.
+///
+/// For more detailed information (including additional classes), browse the
+/// different sections of this documentation. A good place to start is:
+/// tinythread.h.
+
+// Which platform are we on?
+#if !defined(_TTHREAD_PLATFORM_DEFINED_)
+  #if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
+    #define _TTHREAD_WIN32_
+  #else
+    #define _TTHREAD_POSIX_
+  #endif
+  #define _TTHREAD_PLATFORM_DEFINED_
+#endif
+
+// Platform specific includes
+#if defined(_TTHREAD_WIN32_)
+  #include <windows.h>
+#else
+  #include <pthread.h>
+  #include <signal.h>
+  #include <sched.h>
+  #include <unistd.h>
+#endif
+
+// Generic includes
+#include <ostream>
+
+/// TinyThread++ version (major number).
+#define TINYTHREAD_VERSION_MAJOR 0
+/// TinyThread++ version (minor number).
+#define TINYTHREAD_VERSION_MINOR 9
+/// TinyThread++ version (full version).
+#define TINYTHREAD_VERSION (TINYTHREAD_VERSION_MAJOR * 100 + TINYTHREAD_VERSION_MINOR)
+
+
+/// @def thread_local
+/// Thread local storage keyword.
+/// A variable that is declared with the \c thread_local keyword makes the
+/// value of the variable local to each thread (known as thread-local storage,
+/// or TLS). Example usage:
+/// @code
+/// // This variable is local to each thread.
+/// thread_local int variable;
+/// @endcode
+/// @note The \c thread_local keyword is a macro that maps to the corresponding
+/// compiler directive (e.g. \c __declspec(thread)). While the C++0x standard
+/// allows for non-trivial types (e.g. classes with constructors and
+/// destructors) to be declared with the \c thread_local keyword, most pre-C++0x
+/// compilers only allow for trivial types (e.g. \c int). So, to guarantee
+/// portable code, only use trivial types for thread local storage.
+/// @note This directive is currently not supported on Mac OS X (it will give
+/// a compiler error), since compile-time TLS is not supported in the Mac OS X
+/// executable format.
+/// @hideinitializer
+
+#if (__cplusplus <= 199711L) && !defined(thread_local)
+ #if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__SUNPRO_CC) || defined(__IBMCPP__)
+  #define thread_local __thread
+ #else
+  #define thread_local __declspec(thread)
+ #endif
+#endif
+
+
+/// Main name space for TinyThread++.
+/// This namespace is more or less equivalent to the \c std namespace for the
+/// C++0x thread classes. For instance, the tthread::mutex class corresponds to
+/// the std::mutex class.
+namespace tthread {
 
 /// Mutex class.
 /// This is a mutual exclusion object for synchronizing access to shared
@@ -78,7 +131,7 @@ class mutex {
     /// Constructor.
     mutex()
     {
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
       InitializeCriticalSection(&mHandle);
 #else
       pthread_mutex_init(&mHandle, NULL);
@@ -88,7 +141,7 @@ class mutex {
     /// Destructor.
     ~mutex()
     {
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
       DeleteCriticalSection(&mHandle);
 #else
       pthread_mutex_destroy(&mHandle);
@@ -101,7 +154,7 @@ class mutex {
     /// @see lock_guard
     inline void lock()
     {
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
       EnterCriticalSection(&mHandle);
 #else
       pthread_mutex_lock(&mHandle);
@@ -115,7 +168,7 @@ class mutex {
     /// not be acquired.
     inline bool try_lock()
     {
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
       return TryEnterCriticalSection(&mHandle) ? true : false;
 #else
       return (pthread_mutex_trylock(&mHandle) == 0) ? true : false;
@@ -127,7 +180,7 @@ class mutex {
     /// be unblocked.
     inline void unlock()
     {
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
       LeaveCriticalSection(&mHandle);
 #else
       pthread_mutex_unlock(&mHandle);
@@ -135,7 +188,7 @@ class mutex {
     }
 
   private:
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     CRITICAL_SECTION mHandle;
 #else
     pthread_mutex_t mHandle;
@@ -212,7 +265,7 @@ class lock_guard {
 class condition_variable {
   public:
     /// Constructor.
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     condition_variable();
 #else
     condition_variable()
@@ -222,7 +275,7 @@ class condition_variable {
 #endif
 
     /// Destructor.
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     ~condition_variable();
 #else
     ~condition_variable()
@@ -236,7 +289,7 @@ class condition_variable {
     /// is woken by \c notify_one(), \c notify_all() or a spurious wake up.
     /// @param[in] aMutex A mutex that will be unlocked when the wait operation
     ///   starts, an locked again as soon as the wait operation is finished.
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     void wait(mutex &aMutex);
 #else
     inline void wait(mutex &aMutex)
@@ -250,7 +303,7 @@ class condition_variable {
     /// one will be woken up.
     /// @note Only threads that started waiting prior to this call will be
     /// woken up.
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     void notify_one();
 #else
     inline void notify_one()
@@ -264,7 +317,7 @@ class condition_variable {
     /// be woken up.
     /// @note Only threads that started waiting prior to this call will be
     /// woken up.
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     void notify_all();
 #else
     inline void notify_all()
@@ -274,7 +327,7 @@ class condition_variable {
 #endif
 
   private:
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     HANDLE mEvents[2];                  ///< Signal and broadcast event HANDLEs.
     unsigned int mWaitersCount;         ///< Count of the number of waiters.
     CRITICAL_SECTION mWaitersCountLock; ///< Serialize access to mWaitersCount.
@@ -284,55 +337,23 @@ class condition_variable {
 };
 
 
-/// Thread ID.
-/// The thread ID is a unique identifier for each thread.
-class id {
-  public:
-    /// Default constructor.
-    /// The default constructed ID is that of thread without a thread of
-    /// execution.
-    id() : mId(0) {};
-
-    id(unsigned long int aId) : mId(aId) {};
-
-    id & operator=(const id &aId)
-    {
-      mId = aId.mId;
-      return *this;
-    }
-
-    bool operator==(const id &aId)
-    {
-      return (aId.mId == mId);
-    }
-
-    bool operator!=(const id &aId)
-    {
-      return (aId.mId != mId);
-    }
-
-  private:
-    unsigned long int mId;
-
-  friend std::ostream& operator <<(std::ostream &os, const id &obj);
-};
-
-
 /// Thread class.
 class thread {
   public:
-#ifdef WIN32
+#if defined(_TTHREAD_WIN32_)
     typedef HANDLE native_handle_type;
 #else
     typedef pthread_t native_handle_type;
 #endif
 
+    class id;
+
     /// Default constructor.
     /// Construct a \c thread object without an associated thread of execution
     /// (i.e. non-joinable).
     thread() : mHandle(0), mNotAThread(true)
-#ifdef WIN32
-    , mWi32ThreadID(0)
+#if defined(_TTHREAD_WIN32_)
+    , mWin32ThreadID(0)
 #endif
     {}
 
@@ -370,28 +391,166 @@ class thread {
       return mHandle;
     }
 
+    /// Determine the number of threads which can possibly execute concurrently.
+    /// This function is useful for determining the optimal number of threads to
+    /// use for a task.
+    /// @return The number of hardware thread contexts in the system.
+    /// @note If this value is not defined, the function returns zero (0).
+    static unsigned hardware_concurrency();
+
   private:
-    native_handle_type mHandle; ///< Thread handle.
-    mutable mutex mDataMutex;   ///< Serializer for access to the thread private data.
-    bool mNotAThread;           ///< True if this object is not a thread of execution.
-#ifdef WIN32
-    DWORD mWi32ThreadID;        ///< Unique thread ID (filled out by CreateThread).
+    native_handle_type mHandle;   ///< Thread handle.
+    mutable mutex mDataMutex;     ///< Serializer for access to the thread private data.
+    bool mNotAThread;             ///< True if this object is not a thread of execution.
+#if defined(_TTHREAD_WIN32_)
+    unsigned int mWin32ThreadID;  ///< Unique thread ID (filled out by _beginthreadex).
 #endif
 
-    // The internal thread wrapper function needs access to the internal thread
-    // data.
-    friend void _thread_wrapper(void * aArg);
+    // This is the internal thread wrapper function.
+#if defined(_TTHREAD_WIN32_)
+    static unsigned WINAPI wrapper_function(void * aArg);
+#else
+    static void * wrapper_function(void * aArg);
+#endif
+};
+
+/// Thread ID.
+/// The thread ID is a unique identifier for each thread.
+/// @see thread::get_id()
+class thread::id {
+  public:
+    /// Default constructor.
+    /// The default constructed ID is that of thread without a thread of
+    /// execution.
+    id() : mId(0) {};
+
+    id(unsigned long int aId) : mId(aId) {};
+
+    inline id & operator=(const id &aId)
+    {
+      mId = aId.mId;
+      return *this;
+    }
+
+    inline friend bool operator==(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId == aId2.mId);
+    }
+
+    inline friend bool operator!=(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId != aId2.mId);
+    }
+
+    inline friend bool operator<=(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId <= aId2.mId);
+    }
+
+    inline friend bool operator<(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId < aId2.mId);
+    }
+
+    inline friend bool operator>=(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId >= aId2.mId);
+    }
+
+    inline friend bool operator>(const id &aId1, const id &aId2)
+    {
+      return (aId1.mId > aId2.mId);
+    }
+
+    inline friend std::ostream& operator <<(std::ostream &os, const id &obj)
+    {
+      os << obj.mId;
+      return os;
+    }
+
+  private:
+    unsigned long int mId;
 };
 
 
-namespace this_thread {
-  /// Return the thread ID of the calling thread.
-  id get_id();
+// Related to <ratio> - minimal to be able to support chrono.
+typedef long long __intmax_t;
+
+/// Minimal implementation of the \c ratio class. This class provides enough
+/// functionality to implement some basic \c chrono classes.
+template <__intmax_t N, __intmax_t D = 1> class ratio {
+  public:
+    static double _as_double() { return double(N) / double(D); }
+};
+
+/// Minimal implementation of the \c chrono namespace.
+/// The \c chrono namespace provides types for specifying time intervals.
+namespace chrono {
+  /// Duration template class. This class provides enough functionality to
+  /// implement \c this_thread::sleep_for().
+  template <class _Rep, class _Period = ratio<1> > class duration {
+    private:
+      _Rep rep_;
+    public:
+      typedef _Rep rep;
+      typedef _Period period;
+
+      /// Construct a duration object with the given duration.
+      template <class _Rep2>
+        explicit duration(const _Rep2& r) : rep_(r) {};
+
+      /// Return the value of the duration object.
+      rep count() const
+      {
+        return rep_;
+      }
+  };
+
+  // Standard duration types.
+  typedef duration<__intmax_t, ratio<1, 1000000000> > nanoseconds; ///< Duration with the unit nanoseconds.
+  typedef duration<__intmax_t, ratio<1, 1000000> > microseconds;   ///< Duration with the unit microseconds.
+  typedef duration<__intmax_t, ratio<1, 1000> > milliseconds;      ///< Duration with the unit milliseconds.
+  typedef duration<__intmax_t> seconds;                            ///< Duration with the unit seconds.
+  typedef duration<__intmax_t, ratio<60> > minutes;                ///< Duration with the unit minutes.
+  typedef duration<__intmax_t, ratio<3600> > hours;                ///< Duration with the unit hours.
 }
 
-/// Determine the number of processors (CPU cores) in the system. This function
-/// is useful for determining the optimal number of threads to use for a task.
-int number_of_processors();
+/// The namespace \c this_thread provides methods for dealing with the
+/// calling thread.
+namespace this_thread {
+  /// Return the thread ID of the calling thread.
+  thread::id get_id();
+
+  /// Yield execution to another thread.
+  /// Offers the operating system the opportunity to schedule another thread
+  /// that is ready to run on the current processor.
+  inline void yield()
+  {
+#if defined(_TTHREAD_WIN32_)
+    Sleep(0);
+#else
+    sched_yield();
+#endif
+  }
+
+  /// Blocks the calling thread for a period of time.
+  /// @param[in] aTime Minimum time to put the thread to sleep.
+  /// Example usage:
+  /// @code
+  /// // Sleep for 100 milliseconds
+  /// this_thread::sleep_for(chrono::milliseconds(100));
+  /// @endcode
+  /// @note Supported duration types are: nanoseconds, microseconds,
+  /// milliseconds, seconds, minutes and hours.
+  template <class _Rep, class _Period> void sleep_for(const chrono::duration<_Rep, _Period>& aTime)
+  {
+#if defined(_TTHREAD_WIN32_)
+    Sleep(int(double(aTime.count()) * (1000.0 * _Period::_as_double()) + 0.5));
+#else
+    usleep(int(double(aTime.count()) * (1000000.0 * _Period::_as_double()) + 0.5));
+#endif
+  }
+}
 
 }
 

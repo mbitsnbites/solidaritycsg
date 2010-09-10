@@ -1,5 +1,8 @@
-TinyThread++ v0.4
+TinyThread++ v0.9
 =================
+
+http://tinythread.sourceforge.net
+
 
 About
 -----
@@ -22,9 +25,37 @@ tinythread.h to your project. In your own code, do:
 #include <tinythread.h>
 using namespace tthread;
 
+If you wish to use the fast_mutex class, inlude fast_mutex.h:
+
+#include <fast_mutex.h>
+
 
 History
 -------
+
+v0.9 - 2010.08.10
+  - Added preliminary support for this_thread::sleep_for().
+
+v0.8 - 2010.07.02
+  - Switched from CreateThread() to _beginthreadex() for Win32 (should fix
+    tiny memory leaks).
+  - Better standards compliance and some code cleanup.
+
+v0.7 - 2010.05.17
+  - Added this_thread::yield().
+  - Replaced the non-standard number_of_processors() function with
+    thread::hardware_concurrency(), which is part of the C++0x draft.
+  - The thread::id() class is now more standards compliant (correct namespace
+    and comparison operators).
+
+v0.6 - 2010.04.28
+  - Added a fast_mutex class (in fast_mutex.h).
+  - Made the test.cpp application compile under Mac OS X and MinGW/g++ 3.x.
+
+v0.5 - 2010.03.31
+  - Added the thread_local keyword (support for thread-local storage).
+  - Added a test application to test the API (test.cpp).
+  - Improved the Doxygen documentation.
 
 v0.4 - 2010.03.27
   - Added thread::get_id() and this_thread::get_id().
