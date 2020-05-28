@@ -24,29 +24,29 @@
 namespace os {
 
 class Timer {
-  private:
-    std::list<double> mStack;
+private:
+  std::list<double> mStack;
 #ifdef WIN32
-    __int64 mTimeFreq;
-    __int64 mTimeStart;
+  __int64 mTimeFreq;
+  __int64 mTimeStart;
 #else
-    long long mTimeStart;
+  long long mTimeStart;
 #endif
 
-  public:
-    /// Constructor
-    Timer();
+public:
+  /// Constructor
+  Timer();
 
-    /// Get current time.
-    double Get();
+  /// Get current time.
+  double Get();
 
-    /// Push current time (start measuring).
-    void Push();
+  /// Push current time (start measuring).
+  void Push();
 
-    /// Pop delta time since last push.
-    double PopDelta();
+  /// Pop delta time since last push.
+  double PopDelta();
 };
 
-}
+}  // namespace os
 
-#endif // _OSTIME_H_
+#endif  // _OSTIME_H_

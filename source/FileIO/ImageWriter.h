@@ -24,46 +24,42 @@ namespace csg {
 
 /// Image writer base class.
 class ImageWriter {
-  public:
-    enum PixelFormat {
-      pfSigned8 = 1
-    };
+public:
+  enum PixelFormat { pfSigned8 = 1 };
 
-    /// Constructor.
-    ImageWriter()
-    {
-      mWidth = mHeight = 0;
-      mPixelFormat = pfSigned8;
-      mSampleSpace = 0;
-    }
+  /// Constructor.
+  ImageWriter() {
+    mWidth = mHeight = 0;
+    mPixelFormat = pfSigned8;
+    mSampleSpace = 0;
+  }
 
-    /// Destructor.
-    virtual ~ImageWriter() {}
+  /// Destructor.
+  virtual ~ImageWriter() {
+  }
 
-    /// Define the image format.
-    inline void SetFormat(int aWidth, int aHeight, PixelFormat aPixelFormat)
-    {
-      mWidth = aWidth;
-      mHeight = aHeight;
-      mPixelFormat = aPixelFormat;
-    }
+  /// Define the image format.
+  inline void SetFormat(int aWidth, int aHeight, PixelFormat aPixelFormat) {
+    mWidth = aWidth;
+    mHeight = aHeight;
+    mPixelFormat = aPixelFormat;
+  }
 
-    /// Define the sample space (dimensions).
-    inline void SetSampleSpace(SampleSpace * aSampleSpace)
-    {
-      mSampleSpace = aSampleSpace;
-    }
+  /// Define the sample space (dimensions).
+  inline void SetSampleSpace(SampleSpace* aSampleSpace) {
+    mSampleSpace = aSampleSpace;
+  }
 
-    /// Save the image to a file.
-    virtual void SaveToFile(const char * aFileName, void * aData, int aSliceNo = 0) = 0;
+  /// Save the image to a file.
+  virtual void SaveToFile(const char* aFileName, void* aData, int aSliceNo = 0) = 0;
 
-  protected:
-    int mWidth;                 ///< Bitmap width.
-    int mHeight;                ///< Bitmap height.
-    PixelFormat mPixelFormat;   ///< Pixel format.
-    SampleSpace * mSampleSpace; ///< Sample space definition
+protected:
+  int mWidth;                 ///< Bitmap width.
+  int mHeight;                ///< Bitmap height.
+  PixelFormat mPixelFormat;   ///< Pixel format.
+  SampleSpace* mSampleSpace;  ///< Sample space definition
 };
 
-}
+}  // namespace csg
 
-#endif // _IMAGEWRITER_H_
+#endif  // _IMAGEWRITER_H_

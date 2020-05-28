@@ -26,106 +26,95 @@ namespace csg {
 
 /// 2D point class.
 class Point {
-  public:
-    Point() : x(0), y(0) {}
+public:
+  Point() : x(0), y(0) {
+  }
 
-    Point(double aX, double aY)
-    {
-      x = aX;
-      y = aY;
-    }
+  Point(double aX, double aY) {
+    x = aX;
+    y = aY;
+  }
 
-    inline double& operator[](unsigned int aIdx) const
-    {
-      return ((double *) &x)[aIdx];
-    }
+  inline double& operator[](unsigned int aIdx) const {
+    return ((double*)&x)[aIdx];
+  }
 
-    inline Point operator+(const Point &p) const
-    {
-      return Point(x + p.x,  y + p.y);
-    }
+  inline Point operator+(const Point& p) const {
+    return Point(x + p.x, y + p.y);
+  }
 
-    inline Point operator-(const Point &p) const
-    {
-      return Point(x - p.x,  y - p.y);
-    }
+  inline Point operator-(const Point& p) const {
+    return Point(x - p.x, y - p.y);
+  }
 
-    inline void operator+=(const Point &p)
-    {
-      x += p.x;
-      y += p.y;
-    }
+  inline void operator+=(const Point& p) {
+    x += p.x;
+    y += p.y;
+  }
 
-    inline bool operator==(const Point &p) const
-    {
-      return (x == p.x) && (y == p.y);
-    }
+  inline bool operator==(const Point& p) const {
+    return (x == p.x) && (y == p.y);
+  }
 
-    inline bool operator!=(const Point &p) const
-    {
-      return (x != p.x) || (y != p.y);
-    }
+  inline bool operator!=(const Point& p) const {
+    return (x != p.x) || (y != p.y);
+  }
 
-    double x, y;
+  double x, y;
 };
-
 
 /// Closed 2D countour class.
 class Contour {
-  public:
-    /// Check if the countour is an exterior.
-    /// Any contour that is clockwise oriented is considered exterior.
-    bool IsExterior();
+public:
+  /// Check if the countour is an exterior.
+  /// Any contour that is clockwise oriented is considered exterior.
+  bool IsExterior();
 
-    /// Return the number of points in the contour.
-    inline unsigned int Size()
-    {
-      return mPoints.size();
-    }
+  /// Return the number of points in the contour.
+  inline unsigned int Size() {
+    return mPoints.size();
+  }
 
-    /// Set the number of points in the contour.
-    inline void ReSize(unsigned int aNewSize)
-    {
-      mPoints.resize(aNewSize);
-    }
+  /// Set the number of points in the contour.
+  inline void ReSize(unsigned int aNewSize) {
+    mPoints.resize(aNewSize);
+  }
 
-    inline Point& operator[](unsigned int aIdx)
-    {
-      return mPoints[aIdx];
-    }
+  inline Point& operator[](unsigned int aIdx) {
+    return mPoints[aIdx];
+  }
 
-  private:
-    std::vector<Point> mPoints;
+private:
+  std::vector<Point> mPoints;
 };
 
 /// Voxel slice to curve converter.
 /// This class implements the marching squares algorithm, and generates
 /// separated closed contours from a voxel slice.
 class Curver {
-  public:
-    /// Constructor.
-    Curver() : mSampleSpace(0) {}
+public:
+  /// Constructor.
+  Curver() : mSampleSpace(0) {
+  }
 
-    /// Destructor.
-    ~Curver();
+  /// Destructor.
+  ~Curver();
 
-    /// Define the sample space (dimensions).
-    inline void SetSampleSpace(SampleSpace * aSampleSpace)
-    {
-      mSampleSpace = aSampleSpace;
-    }
+  /// Define the sample space (dimensions).
+  inline void SetSampleSpace(SampleSpace* aSampleSpace) {
+    mSampleSpace = aSampleSpace;
+  }
 
-    /// Make contours from a slice.
-    /// @note The sample space must have been defined first
-    /// @see SetSampleSpace()
-    void MakeContours(Voxel * aSlice);
+  /// Make contours from a slice.
+  /// @note The sample space must have been defined first
+  /// @see SetSampleSpace()
+  void MakeContours(Voxel* aSlice);
 
-  private:
-    std::list<Contour*> mContours; ///< List of contours.
-    SampleSpace * mSampleSpace;    ///< Sample space definition
+private:
+  std::list<Contour*> mContours;  ///< List of contours.
+  SampleSpace* mSampleSpace;      ///< Sample space definition
 };
 
+}  // namespace csg
 
-}
-
-#endif // _CURVER_H_
+#endif  // _CURVER_H_

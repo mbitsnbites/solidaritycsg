@@ -27,15 +27,12 @@ namespace csg {
 //------------------------------------------------------------------------------
 
 /// Normalize a point.
-static Point Normalize(const Point &aPoint)
-{
+static Point Normalize(const Point& aPoint) {
   double len = aPoint.x * aPoint.x + aPoint.y * aPoint.y;
-  if(len > 1e-100)
-  {
+  if (len > 1e-100) {
     double lenInv = 1.0 / sqrt(len);
     return Point(aPoint.x * lenInv, aPoint.y * lenInv);
-  }
-  else
+  } else
     return Point(0.0, 0.0);
 }
 
@@ -43,22 +40,19 @@ static Point Normalize(const Point &aPoint)
 /// The angle difference is positive for clockwise rotation and negative for
 /// counter clockwise rotation.
 /// @note v1 and v2 need to be normalized.
-static double CalcDeltaAngle(const Point &v1, const Point &v2)
-{
+static double CalcDeltaAngle(const Point& v1, const Point& v2) {
   double deltaAngle = acos(v1.x * v2.x + v1.y * v2.y);
-  if((v1.x * v2.y - v1.y * v2.x) > 0.0)
+  if ((v1.x * v2.y - v1.y * v2.x) > 0.0)
     deltaAngle = -deltaAngle;
   return deltaAngle;
 }
-
 
 //------------------------------------------------------------------------------
 // Contour
 //------------------------------------------------------------------------------
 
-bool Contour::IsExterior()
-{
-  if(mPoints.size() < 3)
+bool Contour::IsExterior() {
+  if (mPoints.size() < 3)
     return true;
 
   // Starting vector
@@ -66,8 +60,7 @@ bool Contour::IsExterior()
 
   // Calculate Accumulated angle
   double angle = 0.0;
-  for(unsigned int i = 1; i < mPoints.size(); ++ i)
-  {
+  for (unsigned int i = 1; i < mPoints.size(); ++i) {
     Point v1 = v2;
     v2 = Normalize(mPoints[i] - mPoints[i - 1]);
     angle += CalcDeltaAngle(v1, v2);
@@ -77,22 +70,18 @@ bool Contour::IsExterior()
   return (angle >= 0.0);
 }
 
-
-
 //------------------------------------------------------------------------------
 // Curver
 //------------------------------------------------------------------------------
 
-Curver::~Curver()
-{
+Curver::~Curver() {
   // Free all contours
-  for(list<Contour*>::iterator i = mContours.begin(); i != mContours.end(); ++ i)
+  for (list<Contour*>::iterator i = mContours.begin(); i != mContours.end(); ++i)
     delete *i;
 }
 
-void Curver::MakeContours(Voxel * aSlice)
-{
+void Curver::MakeContours(Voxel* aSlice) {
   // FIXME!
 }
 
-}
+}  // namespace csg

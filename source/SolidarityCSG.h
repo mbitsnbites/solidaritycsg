@@ -31,7 +31,6 @@
 #include "Boolean/CSGNode.h"
 #include "Polygonize/Polygonize.h"
 
-
 //-----------------------------------------------------------------------------
 // BEGIN Doxygen documentation main page:
 //-----------------------------------------------------------------------------
@@ -50,4 +49,4 @@ SolidarityCSG is a library for quick and robust constructive solid geometry
 // END Doxygen documentation main page:
 //-----------------------------------------------------------------------------
 
-#endif // _SOLIDARITYCSG_H_
+#endif  // _SOLIDARITYCSG_H_

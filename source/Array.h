@@ -25,37 +25,33 @@ namespace csg {
 /// avoid memory leaks when an exception occurs).
 template <class T>
 class Array {
-  public:
-    /// Constructor.
-    Array(unsigned int aSize)
-    {
-      mData = new T[aSize];
-      mSize = aSize;
-    }
+public:
+  /// Constructor.
+  Array(unsigned int aSize) {
+    mData = new T[aSize];
+    mSize = aSize;
+  }
 
-    /// Destructor.
-    ~Array()
-    {
-      delete[] mData;
-    }
+  /// Destructor.
+  ~Array() {
+    delete[] mData;
+  }
 
-    /// Return the size of the array.
-    inline unsigned int size()
-    {
-      return mSize;
-    }
+  /// Return the size of the array.
+  inline unsigned int size() {
+    return mSize;
+  }
 
-    /// Indexing operator.
-    inline T& operator[](unsigned int aIdx) const
-    {
-      return mData[aIdx];
-    }
+  /// Indexing operator.
+  inline T& operator[](unsigned int aIdx) const {
+    return mData[aIdx];
+  }
 
-  private:
-    T * mData;          ///< Actual data array.
-    unsigned int mSize; ///< Size of the array.
+private:
+  T* mData;            ///< Actual data array.
+  unsigned int mSize;  ///< Size of the array.
 };
 
-}
+}  // namespace csg
 
-#endif // _ARRAY_H_
+#endif  // _ARRAY_H_

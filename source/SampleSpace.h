@@ -34,40 +34,37 @@ typedef signed char Voxel;
 
 /// Voxel sampler space definition class.
 class SampleSpace {
-  public:
-    /// Sanity check of the sample space parameters.
-    inline bool IsValid()
-    {
-      return ((mDiv[0] >= 1) && (mDiv[1] >= 1) && (mDiv[2] >= 1) &&
-              (mAABB.mMax.x > mAABB.mMin.x) && (mAABB.mMax.y > mAABB.mMin.y) &&
-              (mAABB.mMax.z > mAABB.mMin.z));
-    }
+public:
+  /// Sanity check of the sample space parameters.
+  inline bool IsValid() {
+    return ((mDiv[0] >= 1) && (mDiv[1] >= 1) && (mDiv[2] >= 1) && (mAABB.mMax.x > mAABB.mMin.x) &&
+            (mAABB.mMax.y > mAABB.mMin.y) && (mAABB.mMax.z > mAABB.mMin.z));
+  }
 
-    /// Return the voxel spacing (voxel size).
-    inline Vector3 VoxelSize()
-    {
-      Vector3 d = mAABB.Diagonal();
-      d.x /= mDiv[0];
-      d.y /= mDiv[1];
-      d.z /= mDiv[2];
-      return d;
-    }
+  /// Return the voxel spacing (voxel size).
+  inline Vector3 VoxelSize() {
+    Vector3 d = mAABB.Diagonal();
+    d.x /= mDiv[0];
+    d.y /= mDiv[1];
+    d.z /= mDiv[2];
+    return d;
+  }
 
-    /// Define the sample space. This method calculates the optimal sample
-    /// space parameters, based on the given minimal enclosing bounding box
-    /// and the desired resolution.
-    void DefineSpace(BoundingBox &aAABB, Vector3 aResolution);
+  /// Define the sample space. This method calculates the optimal sample
+  /// space parameters, based on the given minimal enclosing bounding box
+  /// and the desired resolution.
+  void DefineSpace(BoundingBox& aAABB, Vector3 aResolution);
 
-    /// Define the sample space (uniform resolution).
-    void DefineSpace(BoundingBox &aAABB, double aResolution);
+  /// Define the sample space (uniform resolution).
+  void DefineSpace(BoundingBox& aAABB, double aResolution);
 
-    BoundingBox mAABB; ///< Bonding box for the voxel space.
-    int mDiv[3];       ///< Number of divisions of the voxel space (x, y, z).
+  BoundingBox mAABB;  ///< Bonding box for the voxel space.
+  int mDiv[3];        ///< Number of divisions of the voxel space (x, y, z).
 };
 
 // Quick slice filler function (like memset).
-void FillSlice(Voxel * aSlice, Voxel aValue, int aCount);
+void FillSlice(Voxel* aSlice, Voxel aValue, int aCount);
 
-}
+}  // namespace csg
 
-#endif // _SAMPLESPACE_H_
+#endif  // _SAMPLESPACE_H_

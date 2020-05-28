@@ -25,14 +25,14 @@ namespace csg {
 
 /// 3D triangle mesh class.
 class Mesh {
-  public:
-    /// Join duplicate (identical) vertices.
-    void JoinVertices();
+public:
+  /// Join duplicate (identical) vertices.
+  void JoinVertices();
 
-    std::vector<int>     mIndices;  ///< Triangle indices.
-    std::vector<Vector3> mVertices; ///< Vertex coordinates.
+  std::vector<int> mIndices;       ///< Triangle indices.
+  std::vector<Vector3> mVertices;  ///< Vertex coordinates.
 };
 
-}
+}  // namespace csg
 
-#endif // _MESH_H_
+#endif  // _MESH_H_

@@ -24,181 +24,157 @@
 #include <tinythread.h>
 #include "CSGJob.h"
 
-
 using namespace std;
 using namespace tthread;
 using namespace csg;
 using namespace os;
-
 
 //------------------------------------------------------------------------------
 // CSGSlice
 //------------------------------------------------------------------------------
 
 class CSGSlice {
-  public:
-    CSGSlice(int aSize, int aID)
-    {
-      mData = new Voxel[aSize];
-      mID = aID;
-      mDone = false;
-    }
+public:
+  CSGSlice(int aSize, int aID) {
+    mData = new Voxel[aSize];
+    mID = aID;
+    mDone = false;
+  }
 
-    ~CSGSlice()
-    {
-      delete[] mData;
-    }
+  ~CSGSlice() {
+    delete[] mData;
+  }
 
-    inline Voxel * Data()
-    {
-      return mData;
-    }
+  inline Voxel* Data() {
+    return mData;
+  }
 
-    inline int ID()
-    {
-      return mID;
-    }
+  inline int ID() {
+    return mID;
+  }
 
-    inline bool IsDone()
-    {
-      return mDone;
-    }
+  inline bool IsDone() {
+    return mDone;
+  }
 
-    inline void Done()
-    {
-      mDone = true;
-    }
+  inline void Done() {
+    mDone = true;
+  }
 
-  private:
-    Voxel * mData; ///< Slice data.
-    int mID;       ///< Slice ID.
-    bool mDone;    ///< Flag: true if the slice has been calculated.
+private:
+  Voxel* mData;  ///< Slice data.
+  int mID;       ///< Slice ID.
+  bool mDone;    ///< Flag: true if the slice has been calculated.
 };
-
 
 //------------------------------------------------------------------------------
 // CSGSlicePool
 //------------------------------------------------------------------------------
 
 class CSGSlicePool {
-  public:
-    CSGSlicePool()
-    {
-      mNextID = 0;
-      mSampleSpace = 0;
-      mCSGRoot = 0;
+public:
+  CSGSlicePool() {
+    mNextID = 0;
+    mSampleSpace = 0;
+    mCSGRoot = 0;
+  }
+
+  ~CSGSlicePool() {
+    // If there are any slices left in the list, delete them now
+    list<CSGSlice*>::iterator it;
+    for (it = mSlices.begin(); it != mSlices.end(); ++it)
+      delete[](CSGSlice*) * it;
+  }
+
+  /// Define the sample space to use.
+  inline void SetSampleSpace(SampleSpace* aSampleSpace) {
+    mSampleSpace = aSampleSpace;
+  }
+
+  /// Create a new slice and put it in the pool.
+  CSGSlice* NewSlice() {
+    if (!mSampleSpace)
+      throw runtime_error("SampleSpace object undefined.");
+
+    CSGSlice* result = 0;
+    lock_guard<mutex> lock(mMutex);
+    if (mNextID < mSampleSpace->mDiv[2]) {
+      int count = mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1];
+      result = new CSGSlice(count, mNextID);
+      mSlices.push_back(result);
+      ++mNextID;
     }
+    return result;
+  }
 
-    ~CSGSlicePool()
-    {
-      // If there are any slices left in the list, delete them now
-      list<CSGSlice *>::iterator it;
-      for(it = mSlices.begin(); it != mSlices.end(); ++ it)
-        delete[] (CSGSlice *) *it;
-    }
+  /// Signal that the slice is done.
+  void SliceDone(CSGSlice* aSlice) {
+    lock_guard<mutex> lock(mMutex);
+    aSlice->Done();
+    mCondition.notify_all();
+  }
 
-    /// Define the sample space to use.
-    inline void SetSampleSpace(SampleSpace * aSampleSpace)
-    {
-      mSampleSpace = aSampleSpace;
-    }
+  /// Get a specific slice. The slice is removed from the list (NOTE: The
+  /// caller is respondible for freeing the slice). This call is blocking,
+  /// until the corresponding slice is ready.
+  CSGSlice* GetSlice(int aID) {
+    lock_guard<mutex> lock(mMutex);
 
-    /// Create a new slice and put it in the pool.
-    CSGSlice * NewSlice()
-    {
-      if(!mSampleSpace)
-        throw runtime_error("SampleSpace object undefined.");
-
-      CSGSlice * result = 0;
-      lock_guard<mutex> lock(mMutex);
-      if(mNextID < mSampleSpace->mDiv[2])
-      {
-        int count = mSampleSpace->mDiv[0] * mSampleSpace->mDiv[1];
-        result = new CSGSlice(count, mNextID);
-        mSlices.push_back(result);
-        ++ mNextID;
-      }
-      return result;
-    }
-
-    /// Signal that the slice is done.
-    void SliceDone(CSGSlice * aSlice)
-    {
-      lock_guard<mutex> lock(mMutex);
-      aSlice->Done();
-      mCondition.notify_all();
-    }
-
-    /// Get a specific slice. The slice is removed from the list (NOTE: The
-    /// caller is respondible for freeing the slice). This call is blocking,
-    /// until the corresponding slice is ready.
-    CSGSlice * GetSlice(int aID)
-    {
-      lock_guard<mutex> lock(mMutex);
-
-      // Start by finding the slice (wait until it is in the queue)
-      CSGSlice * result = 0;
-      list<CSGSlice *>::iterator it;
-      while(!result)
-      {
-        for(it = mSlices.begin(); it != mSlices.end(); ++ it)
-        {
-          if((*it)->ID() == aID)
-          {
-            result = *it;
-            break;
-          }
+    // Start by finding the slice (wait until it is in the queue)
+    CSGSlice* result = 0;
+    list<CSGSlice*>::iterator it;
+    while (!result) {
+      for (it = mSlices.begin(); it != mSlices.end(); ++it) {
+        if ((*it)->ID() == aID) {
+          result = *it;
+          break;
         }
-
-        // It was not in the queue - wait for the queue to be updated
-        if(!result)
-          mCondition.wait(mMutex);
       }
 
-      // Now, wait for the slice to be done (processed)
-      while(!result->IsDone())
+      // It was not in the queue - wait for the queue to be updated
+      if (!result)
         mCondition.wait(mMutex);
-
-      // Remove the slice from the list
-      mSlices.erase(it);
-
-      return result;
     }
 
-    /// Pointer to the CSG tree root node
-    CSGNode * mCSGRoot;
+    // Now, wait for the slice to be done (processed)
+    while (!result->IsDone())
+      mCondition.wait(mMutex);
 
-  private:
-    mutex mMutex;
-    condition_variable mCondition;
-    int mNextID;
-    SampleSpace * mSampleSpace;
-    list<CSGSlice *> mSlices;
+    // Remove the slice from the list
+    mSlices.erase(it);
+
+    return result;
+  }
+
+  /// Pointer to the CSG tree root node
+  CSGNode* mCSGRoot;
+
+private:
+  mutex mMutex;
+  condition_variable mCondition;
+  int mNextID;
+  SampleSpace* mSampleSpace;
+  list<CSGSlice*> mSlices;
 };
-
 
 //------------------------------------------------------------------------------
 // Slice calculation thread function
 //------------------------------------------------------------------------------
 
-static void SliceCalcThread(void * aArg)
-{
-  CSGSlicePool * slicePool = (CSGSlicePool *) aArg;
-  while(CSGSlice * slice = slicePool->NewSlice())
-  {
+static void SliceCalcThread(void* aArg) {
+  CSGSlicePool* slicePool = (CSGSlicePool*)aArg;
+  while (CSGSlice* slice = slicePool->NewSlice()) {
     // Generate slice data
     slicePool->mCSGRoot->CalculateSlice(slice->Data(), slice->ID());
     slicePool->SliceDone(slice);
   }
 }
 
-
 //------------------------------------------------------------------------------
 // CSGJob
 //------------------------------------------------------------------------------
 
-CSGJob::CSGJob()
-{
+CSGJob::CSGJob() {
   mCSGRoot = 0;
   mResolution = Vector3(0.1, 0.1, 0.1);
   mOutputFileName = string("output");
@@ -206,36 +182,31 @@ CSGJob::CSGJob()
   mOutputFormat = ofSTL;
 }
 
-CSGJob::~CSGJob()
-{
-  if(mCSGRoot)
-    delete(mCSGRoot);
+CSGJob::~CSGJob() {
+  if (mCSGRoot)
+    delete (mCSGRoot);
 }
 
-void CSGJob::LoadFromXML(const char * aFileName)
-{
+void CSGJob::LoadFromXML(const char* aFileName) {
   // Load input XML
   cout << "Loading job description " << aFileName << "..." << endl;
   TiXmlDocument xmlDoc;
-  if(!xmlDoc.LoadFile(aFileName))
+  if (!xmlDoc.LoadFile(aFileName))
     throw runtime_error(xmlDoc.ErrorDesc());
 
   // Parse XML document
-  TiXmlElement * root = xmlDoc.RootElement();
-  if(!root || (root->Type() != TiXmlNode::ELEMENT) ||
-     (root->Value() != string("csg")))
+  TiXmlElement* root = xmlDoc.RootElement();
+  if (!root || (root->Type() != TiXmlNode::ELEMENT) || (root->Value() != string("csg")))
     throw runtime_error("Could not find root element (\"csg\").");
-  TiXmlNode * node = root->FirstChild();
-  while(node)
-  {
-    if(node->Type() == TiXmlNode::ELEMENT)
-    {
+  TiXmlNode* node = root->FirstChild();
+  while (node) {
+    if (node->Type() == TiXmlNode::ELEMENT) {
       // Settings node?
-      if(node->Value() == string("settings"))
+      if (node->Value() == string("settings"))
         LoadSettings(node);
 
       // Volume description node?
-      else if(node->Value() == string("volume"))
+      else if (node->Value() == string("volume"))
         LoadVolume(node);
 
       // Unrecognized node?
@@ -248,27 +219,25 @@ void CSGJob::LoadFromXML(const char * aFileName)
   }
 }
 
-void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
-  ImageWriter * aImageWriter)
-{
+void CSGJob::ExecuteJobST(SampleSpace* aSampleSpace,
+                          Polygonize* aPolygonize,
+                          ImageWriter* aImageWriter) {
   cout << "single threaded..." << flush;
 
   // Allocate memory for two slices
   vector<Voxel> voxelSlice1, voxelSlice2;
   voxelSlice1.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
   voxelSlice2.resize(aSampleSpace->mDiv[0] * aSampleSpace->mDiv[1]);
-  Voxel * slice = &voxelSlice1[0];
-  Voxel * sliceOld = &voxelSlice2[0];
+  Voxel* slice = &voxelSlice1[0];
+  Voxel* sliceOld = &voxelSlice2[0];
 
   // Iterate all slices and produce output data
-  for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
-  {
+  for (int i = 0; i < aSampleSpace->mDiv[2]; ++i) {
     // Get the next slice
     mCSGRoot->CalculateSlice(slice, i);
 
     // Write slice image or genereate mesh triangles?
-    if(mOutputType == otSlices)
-    {
+    if (mOutputType == otSlices) {
       // Construct file name for the slice
       stringstream name;
       name << mOutputFileName;
@@ -276,50 +245,46 @@ void CSGJob::ExecuteJobST(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
       name.width(5);
       name << i;
       name.width(0);
-      if(mOutputFormat == ofTGA)
+      if (mOutputFormat == ofTGA)
         name << ".tga";
 
       // Write this file to disk
       aImageWriter->SaveToFile(name.str().c_str(), slice, i);
-    }
-    else if(mOutputType == otMesh)
-    {
-      if(i > 0)
+    } else if (mOutputType == otMesh) {
+      if (i > 0)
         aPolygonize->AppendSlicePair(sliceOld, slice, i - 1);
     }
 
     // Swap slice buffers
-    Voxel * tmp = sliceOld;
+    Voxel* tmp = sliceOld;
     sliceOld = slice;
     slice = tmp;
   }
 }
 
-void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
-  ImageWriter * aImageWriter)
-{
+void CSGJob::ExecuteJobMT(SampleSpace* aSampleSpace,
+                          Polygonize* aPolygonize,
+                          ImageWriter* aImageWriter) {
   // Start slice calculation threads
   CSGSlicePool slicePool;
   slicePool.SetSampleSpace(aSampleSpace);
   slicePool.mCSGRoot = mCSGRoot;
   int numThreads = thread::hardware_concurrency();
-  if(numThreads < 1)
+  if (numThreads < 1)
     numThreads = 1;
   cout << "using " << (numThreads + 1) << " threads..." << flush;
-  list<thread *> threads;
-  for(int i = 0; i < numThreads; ++ i)
-    threads.push_back(new thread(SliceCalcThread, (void *) &slicePool));
-  CSGSlice * slice, * sliceOld = 0;
+  list<thread*> threads;
+  for (int i = 0; i < numThreads; ++i)
+    threads.push_back(new thread(SliceCalcThread, (void*)&slicePool));
+  CSGSlice *slice, *sliceOld = 0;
 
   // Iterate all slices and produce output data
-  for(int i = 0; i < aSampleSpace->mDiv[2]; ++ i)
-  {
+  for (int i = 0; i < aSampleSpace->mDiv[2]; ++i) {
     // Get the next slice
     slice = slicePool.GetSlice(i);
 
     // Write slice image or genereate mesh triangles?
-    if(mOutputType == otSlices)
-    {
+    if (mOutputType == otSlices) {
       // Construct file name for the slice
       stringstream name;
       name << mOutputFileName;
@@ -327,35 +292,31 @@ void CSGJob::ExecuteJobMT(SampleSpace * aSampleSpace, Polygonize * aPolygonize,
       name.width(5);
       name << i;
       name.width(0);
-      if(mOutputFormat == ofTGA)
+      if (mOutputFormat == ofTGA)
         name << ".tga";
 
       // Write this file to disk
       aImageWriter->SaveToFile(name.str().c_str(), slice->Data(), i);
-    }
-    else if(mOutputType == otMesh)
-    {
-      if(i > 0)
+    } else if (mOutputType == otMesh) {
+      if (i > 0)
         aPolygonize->AppendSlicePair(sliceOld->Data(), slice->Data(), i - 1);
     }
 
     // Swap slice buffers
-    if(sliceOld)
+    if (sliceOld)
       delete sliceOld;
     sliceOld = slice;
   }
 
   // Delete threads
-  for(list<thread *>::iterator i = threads.begin(); i != threads.end(); ++ i)
-  {
-    thread * t = *i;
+  for (list<thread*>::iterator i = threads.begin(); i != threads.end(); ++i) {
+    thread* t = *i;
     t->join();
     delete t;
   }
 }
 
-void CSGJob::Execute(OperationMode aOperationMode)
-{
+void CSGJob::Execute(OperationMode aOperationMode) {
   double dt;
 
   // Set up a sample space
@@ -366,36 +327,32 @@ void CSGJob::Execute(OperationMode aOperationMode)
   mCSGRoot->GetBoundingBox(sceneAABB);
   space.DefineSpace(sceneAABB, mResolution);
   mCSGRoot->SetSampleSpace(&space);
-  cout << space.mDiv[0]*space.mDiv[1]*space.mDiv[2] << " voxels...";
+  cout << space.mDiv[0] * space.mDiv[1] * space.mDiv[2] << " voxels...";
   dt = mTimer.PopDelta();
   cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
   // Prepare output generator
-  ImageWriter * imageWriter = 0;
-  Polygonize * polygonize = 0;
-  if(mOutputType == otSlices)
-  {
+  ImageWriter* imageWriter = 0;
+  Polygonize* polygonize = 0;
+  if (mOutputType == otSlices) {
     // Prepare image writer
-    if(mOutputFormat == ofTGA)
+    if (mOutputFormat == ofTGA)
       imageWriter = new TGAImageWriter;
     else
       throw runtime_error("Unsupported output format for slices.");
     imageWriter->SetFormat(space.mDiv[0], space.mDiv[1], ImageWriter::pfSigned8);
     imageWriter->SetSampleSpace(&space);
-  }
-  else if(mOutputType == otMesh)
-  {
+  } else if (mOutputType == otMesh) {
     // Prepare polygonizer
     polygonize = new Polygonize;
     polygonize->SetSampleSpace(&space);
   }
 
-  try
-  {
+  try {
     // Perform operation...
     cout << "Executing job..." << flush;
     mTimer.Push();
-    if(aOperationMode == omSingleThreaded)
+    if (aOperationMode == omSingleThreaded)
       ExecuteJobST(&space, polygonize, imageWriter);
     else
       ExecuteJobMT(&space, polygonize, imageWriter);
@@ -403,81 +360,68 @@ void CSGJob::Execute(OperationMode aOperationMode)
     cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
 
     // Write mesh file
-    if(mOutputType == otMesh)
-    {
+    if (mOutputType == otMesh) {
       cout << "Writing mesh file..." << polygonize->Count() << " triangles..." << flush;
       mTimer.Push();
       Mesh mesh;
       polygonize->ToMesh(mesh);
-      if(mOutputFormat == ofSTL)
-      {
+      if (mOutputFormat == ofSTL) {
         STLMeshWriter meshWriter;
         meshWriter.SetMesh(&mesh);
         meshWriter.SaveToFile((mOutputFileName + string(".stl")).c_str());
-      }
-      else
+      } else
         throw runtime_error("Unsupported output format for meches.");
       dt = mTimer.PopDelta();
       cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
     }
 
-    if(imageWriter)
-    {
+    if (imageWriter) {
       delete imageWriter;
       imageWriter = 0;
     }
 
-    if(polygonize)
-    {
+    if (polygonize) {
       delete polygonize;
       polygonize = 0;
     }
-  }
-  catch(...)
-  {
-    if(imageWriter)
+  } catch (...) {
+    if (imageWriter)
       delete imageWriter;
-    if(polygonize)
+    if (polygonize)
       delete polygonize;
     throw;
   }
 }
 
-void CSGJob::LoadSettings(TiXmlNode * aNode)
-{
+void CSGJob::LoadSettings(TiXmlNode* aNode) {
   cout << " Reading settings..." << endl;
-  TiXmlNode * node = aNode->FirstChild();
-  while(node)
-  {
-    if(node->Type() == TiXmlNode::ELEMENT)
-    {
-      TiXmlElement * e = (TiXmlElement *) node;
+  TiXmlNode* node = aNode->FirstChild();
+  while (node) {
+    if (node->Type() == TiXmlNode::ELEMENT) {
+      TiXmlElement* e = (TiXmlElement*)node;
 
       // Resolution node?
-      if(node->Value() == string("resolution"))
-      {
+      if (node->Value() == string("resolution")) {
         e->QueryDoubleAttribute("x", &mResolution.x);
         e->QueryDoubleAttribute("y", &mResolution.y);
         e->QueryDoubleAttribute("z", &mResolution.z);
       }
 
       // Output description node?
-      else if(node->Value() == string("output"))
-      {
-        const char * s;
+      else if (node->Value() == string("output")) {
+        const char* s;
 
         // Get output file name
         s = e->Attribute("name");
-        if(s)
+        if (s)
           mOutputFileName = string(s);
 
         // Get output type
         s = e->Attribute("type");
-        if(s)
-        {
-          if(s == string("slices"))
+        if (s) {
+          if (s == string("slices"))
             mOutputType = otSlices;
-          else if(s == string("mesh"))
+          else if (s == string("mesh"))
             mOutputType = otMesh;
           else
             cout << "  Warning: Unrecognized output type: " << s << endl;
@@ -485,11 +429,10 @@ void CSGJob::LoadSettings(TiXmlNode * aNode)
 
         // Get output format
         s = e->Attribute("format");
-        if(s)
-        {
-          if(s == string("tga"))
+        if (s) {
+          if (s == string("tga"))
             mOutputFormat = ofTGA;
-          else if(s == string("stl"))
+          else if (s == string("stl"))
             mOutputFormat = ofSTL;
           else
             cout << "  Warning: Unrecognized output format: " << s << endl;
@@ -509,66 +452,52 @@ void CSGJob::LoadSettings(TiXmlNode * aNode)
   // ...
 }
 
-void CSGJob::LoadVolume(TiXmlNode * aNode)
-{
+void CSGJob::LoadVolume(TiXmlNode* aNode) {
   cout << " Reading volume description..." << endl;
-  TiXmlNode * node = aNode->FirstChild();
-  while(node)
-  {
-    if(node->Type() == TiXmlNode::ELEMENT)
-    {
-      mCSGRoot = LoadCSGNode((TiXmlElement *) node);
+  TiXmlNode* node = aNode->FirstChild();
+  while (node) {
+    if (node->Type() == TiXmlNode::ELEMENT) {
+      mCSGRoot = LoadCSGNode((TiXmlElement*)node);
       break;
     }
     node = node->NextSibling();
   }
 
   // Did we get a proper volume description?
-  if(!mCSGRoot)
+  if (!mCSGRoot)
     throw runtime_error("No volume defined.");
 }
 
-CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
-{
+CSGNode* CSGJob::LoadCSGNode(TiXmlElement* aElement) {
   string nodeName = string(aElement->Value());
-  if(nodeName == string("union"))
-  {
-    CSGUnion * result = new CSGUnion();
-    TiXmlNode * node = aElement->FirstChild();
-    while(node)
-    {
-      if(node->Type() == TiXmlNode::ELEMENT)
-        ((CSGCompositeNode *)result)->AddChild(LoadCSGNode((TiXmlElement *) node));
+  if (nodeName == string("union")) {
+    CSGUnion* result = new CSGUnion();
+    TiXmlNode* node = aElement->FirstChild();
+    while (node) {
+      if (node->Type() == TiXmlNode::ELEMENT)
+        ((CSGCompositeNode*)result)->AddChild(LoadCSGNode((TiXmlElement*)node));
       node = node->NextSibling();
     }
     return result;
-  }
-  else if(nodeName == string("intersection"))
-  {
-    CSGIntersection * result = new CSGIntersection();
-    TiXmlNode * node = aElement->FirstChild();
-    while(node)
-    {
-      if(node->Type() == TiXmlNode::ELEMENT)
-        ((CSGCompositeNode *)result)->AddChild(LoadCSGNode((TiXmlElement *) node));
+  } else if (nodeName == string("intersection")) {
+    CSGIntersection* result = new CSGIntersection();
+    TiXmlNode* node = aElement->FirstChild();
+    while (node) {
+      if (node->Type() == TiXmlNode::ELEMENT)
+        ((CSGCompositeNode*)result)->AddChild(LoadCSGNode((TiXmlElement*)node));
       node = node->NextSibling();
     }
     return result;
-  }
-  else if(nodeName == string("difference"))
-  {
-    CSGDifference * result = new CSGDifference();
-    TiXmlNode * node = aElement->FirstChild();
-    while(node)
-    {
-      if(node->Type() == TiXmlNode::ELEMENT)
-        ((CSGCompositeNode *)result)->AddChild(LoadCSGNode((TiXmlElement *) node));
+  } else if (nodeName == string("difference")) {
+    CSGDifference* result = new CSGDifference();
+    TiXmlNode* node = aElement->FirstChild();
+    while (node) {
+      if (node->Type() == TiXmlNode::ELEMENT)
+        ((CSGCompositeNode*)result)->AddChild(LoadCSGNode((TiXmlElement*)node));
       node = node->NextSibling();
     }
     return result;
-  }
-  else if(nodeName == string("sphere"))
-  {
+  } else if (nodeName == string("sphere")) {
     // Get shape parameters
     Vector3 c(0.0, 0.0, 0.0);
     double r = 1.0;
@@ -578,14 +507,12 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
     aElement->QueryDoubleAttribute("r", &r);
 
     // Create shape node
-    SphereVoxelize * v = new SphereVoxelize;
+    SphereVoxelize* v = new SphereVoxelize;
     v->SetSphere(c, r);
-    CSGShape * result = new CSGShape();
-    ((CSGShape *)result)->DefineShape(v);
+    CSGShape* result = new CSGShape();
+    ((CSGShape*)result)->DefineShape(v);
     return result;
-  }
-  else if(nodeName == string("box"))
-  {
+  } else if (nodeName == string("box")) {
     // Get shape parameters
     Vector3 c(0.0, 0.0, 0.0);
     Vector3 s(1.0, 1.0, 1.0);
@@ -597,17 +524,15 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
     aElement->QueryDoubleAttribute("sz", &s.z);
 
     // Create shape node
-    BoxVoxelize * v = new BoxVoxelize;
+    BoxVoxelize* v = new BoxVoxelize;
     v->SetBox(c, s);
-    CSGShape * result = new CSGShape();
-    ((CSGShape *)result)->DefineShape(v);
+    CSGShape* result = new CSGShape();
+    ((CSGShape*)result)->DefineShape(v);
     return result;
-  }
-  else if(nodeName == string("mesh"))
-  {
+  } else if (nodeName == string("mesh")) {
     // Load mesh from file
-    const char * src = aElement->Attribute("src");
-    if(!src)
+    const char* src = aElement->Attribute("src");
+    if (!src)
       throw runtime_error("Missing src attribute in mesh node.");
     cout << "  Loading mesh file " << src << "..." << flush;
     mTimer.Push();
@@ -618,16 +543,14 @@ CSGNode * CSGJob::LoadCSGNode(TiXmlElement * aElement)
 
     // Create shape node
     cout << "building..." << flush;
-    MeshVoxelize * v = new MeshVoxelize;
+    MeshVoxelize* v = new MeshVoxelize;
     v->SetTriangles(mesh);
-    CSGShape * result = new CSGShape();
-    ((CSGShape *)result)->DefineShape(v);
+    CSGShape* result = new CSGShape();
+    ((CSGShape*)result)->DefineShape(v);
     double dt = mTimer.PopDelta();
     cout << "done! (" << int(dt * 1000.0 + 0.5) << " ms)" << endl;
     return result;
-  }
-  else
-  {
+  } else {
     string err = string("Invalid CSG node: ") + nodeName;
     throw runtime_error(err.c_str());
   }

@@ -22,18 +22,16 @@
 using namespace csg;
 using namespace std;
 
-int main()
-{
-  try
-  {
+int main() {
+  try {
     // Set up boolean tree
     cout << "Setting up CSG tree..." << flush;
     CSGDifference csg;
-    CSGShape * node1 = (CSGShape *) csg.AddChild(new CSGShape());
-    BoxVoxelize * s1 = (BoxVoxelize *) node1->DefineShape(new BoxVoxelize());
+    CSGShape* node1 = (CSGShape*)csg.AddChild(new CSGShape());
+    BoxVoxelize* s1 = (BoxVoxelize*)node1->DefineShape(new BoxVoxelize());
     s1->SetBox(Vector3(0.0, 0.0, 0.0), Vector3(1.0, 1.0, 1.0));
-    CSGShape * node2 = (CSGShape *) csg.AddChild(new CSGShape());
-    SphereVoxelize * s2 = (SphereVoxelize *) node2->DefineShape(new SphereVoxelize());
+    CSGShape* node2 = (CSGShape*)csg.AddChild(new CSGShape());
+    SphereVoxelize* s2 = (SphereVoxelize*)node2->DefineShape(new SphereVoxelize());
     s2->SetSphere(Vector3(0.0, 0.0, 0.0), 0.6);
     cout << "done!" << endl;
 
@@ -55,19 +53,18 @@ int main()
     vector<Voxel> voxelSlice1, voxelSlice2;
     voxelSlice1.resize(space.mDiv[0] * space.mDiv[1]);
     voxelSlice2.resize(space.mDiv[0] * space.mDiv[1]);
-    Voxel * slice = &voxelSlice1[0];
-    Voxel * sliceOld = &voxelSlice2[0];
-    for(int i = 0; i < space.mDiv[2]; ++ i)
-    {
+    Voxel* slice = &voxelSlice1[0];
+    Voxel* sliceOld = &voxelSlice2[0];
+    for (int i = 0; i < space.mDiv[2]; ++i) {
       // Generate slice data
       csg.CalculateSlice(slice, i);
 
       // Convert to triangles
-      if(i > 0)
+      if (i > 0)
         polygonize.AppendSlicePair(sliceOld, slice, i - 1);
 
       // Swap slice buffers
-      Voxel * tmp = sliceOld;
+      Voxel* tmp = sliceOld;
       sliceOld = slice;
       slice = tmp;
     }
@@ -81,9 +78,7 @@ int main()
     output.SetMesh(&mesh);
     output.SaveToFile("demo.stl");
     cout << "done!" << endl;
-  }
-  catch(exception &e)
-  {
+  } catch (exception& e) {
     cout << "Error: " << e.what() << endl;
   }
 

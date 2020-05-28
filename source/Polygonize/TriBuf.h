@@ -29,71 +29,67 @@ namespace csg {
 /// Triangle buffer bin class. A bin object is a single chunk of data, part of
 /// the total data buffer in a TriBuf object.
 class TriBufBin {
-  public:
-    /// Constructor.
-    TriBufBin(int aCapacity)
-    {
-      mCoords.resize(aCapacity * 3);
-      mCapacity = aCapacity;
-      mCount = 0;
-    }
+public:
+  /// Constructor.
+  TriBufBin(int aCapacity) {
+    mCoords.resize(aCapacity * 3);
+    mCapacity = aCapacity;
+    mCount = 0;
+  }
 
-    /// Tells if this bin is full.
-    inline bool IsFull()
-    {
-      return mCount >= mCapacity;
-    }
+  /// Tells if this bin is full.
+  inline bool IsFull() {
+    return mCount >= mCapacity;
+  }
 
-  private:
-    /// Triangle buffer holder.
-    std::vector<Vector3> mCoords;
+private:
+  /// Triangle buffer holder.
+  std::vector<Vector3> mCoords;
 
-    /// Count of triangles in this buffer bin.
-    unsigned int mCount;
+  /// Count of triangles in this buffer bin.
+  unsigned int mCount;
 
-    /// Capacity of triangles in this buffer bin.
-    unsigned int mCapacity;
+  /// Capacity of triangles in this buffer bin.
+  unsigned int mCapacity;
 
   friend class TriBuf;
 };
 
 /// Triangle buffer class.
 class TriBuf {
-  public:
-    /// Constructor.
-    TriBuf()
-    {
-      mCurrent = 0;
-      mCount = 0;
-    }
+public:
+  /// Constructor.
+  TriBuf() {
+    mCurrent = 0;
+    mCount = 0;
+  }
 
-    /// Destructor.
-    ~TriBuf();
+  /// Destructor.
+  ~TriBuf();
 
-    /// Append another triangle.
-    void Append(Vector3 &aPoint1, Vector3 &aPoint2, Vector3 &aPoint3);
+  /// Append another triangle.
+  void Append(Vector3& aPoint1, Vector3& aPoint2, Vector3& aPoint3);
 
-    /// Dump the triangle buffer to a mesh object. This will clear the
-    /// triangle buffer (to save memory).
-    void ToMesh(Mesh &aMesh);
+  /// Dump the triangle buffer to a mesh object. This will clear the
+  /// triangle buffer (to save memory).
+  void ToMesh(Mesh& aMesh);
 
-    /// Return the total triangle count.
-    inline int Count()
-    {
-      return mCount;
-    }
+  /// Return the total triangle count.
+  inline int Count() {
+    return mCount;
+  }
 
-  private:
-    /// List of buffers.
-    std::list<TriBufBin *> mBufList;
+private:
+  /// List of buffers.
+  std::list<TriBufBin*> mBufList;
 
-    /// Currrently active buffer item.
-    TriBufBin * mCurrent;
+  /// Currrently active buffer item.
+  TriBufBin* mCurrent;
 
-    /// Total triangle count.
-    int mCount;
+  /// Total triangle count.
+  int mCount;
 };
 
-}
+}  // namespace csg
 
-#endif // _TRIBUF_H_
+#endif  // _TRIBUF_H_

@@ -24,28 +24,34 @@ namespace csg {
 
 /// Voxelize class for box objects.
 class BoxVoxelize : public Voxelize {
-  public:
-    /// Constructor.
-    BoxVoxelize() {}
+public:
+  /// Constructor.
+  BoxVoxelize() {
+  }
 
-    /// Destructor.
-    virtual ~BoxVoxelize() {}
+  /// Destructor.
+  virtual ~BoxVoxelize() {
+  }
 
-    /// Define the box to be voxelized.
-    void SetBox(Vector3 aCenter, Vector3 aSides);
+  /// Define the box to be voxelized.
+  void SetBox(Vector3 aCenter, Vector3 aSides);
 
-    /// Calculate a single slice of the voxel volume. The slice must be
-    /// allocated by the caller, and hold DivX * DivY voxels. The function
-    /// returns false if all elements were cosidered "outside" (i.e. the slice
-    /// is empty).
-    virtual bool CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
-      int &aMaxX, int &aMaxY);
+  /// Calculate a single slice of the voxel volume. The slice must be
+  /// allocated by the caller, and hold DivX * DivY voxels. The function
+  /// returns false if all elements were cosidered "outside" (i.e. the slice
+  /// is empty).
+  virtual bool CalculateSlice(Voxel* aSlice,
+                              int aZ,
+                              int& aMinX,
+                              int& aMinY,
+                              int& aMaxX,
+                              int& aMaxY);
 
-  private:
-    Vector3 mCenter; ///< Box center.
-    Vector3 mSides;  ///< Box sides.
+private:
+  Vector3 mCenter;  ///< Box center.
+  Vector3 mSides;   ///< Box sides.
 };
 
-}
+}  // namespace csg
 
-#endif // _BOXVOXELIZE_H_
+#endif  // _BOXVOXELIZE_H_

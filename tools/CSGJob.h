@@ -25,73 +25,66 @@
 
 /// CSG job class.
 class CSGJob {
-  public:
-    /// Operation mode.
-    enum OperationMode {
-      omSingleThreaded = 1,
-      omMultiThreaded = 2
-    };
+public:
+  /// Operation mode.
+  enum OperationMode { omSingleThreaded = 1, omMultiThreaded = 2 };
 
-    /// Constructor.
-    CSGJob();
+  /// Constructor.
+  CSGJob();
 
-    /// Destructor.
-    ~CSGJob();
+  /// Destructor.
+  ~CSGJob();
 
-    /// Load job description from an XML file.
-    void LoadFromXML(const char * aFileName);
+  /// Load job description from an XML file.
+  void LoadFromXML(const char* aFileName);
 
-    /// Execute job.
-    void Execute(OperationMode aOperationMode = omMultiThreaded);
+  /// Execute job.
+  void Execute(OperationMode aOperationMode = omMultiThreaded);
 
-  private:
-    /// Output type enumerator.
-    enum OutputType {
-      otSlices = 1,
-      otMesh = 2
-    };
+private:
+  /// Output type enumerator.
+  enum OutputType { otSlices = 1, otMesh = 2 };
 
-    /// Output format enumerator.
-    enum OutputFormat {
-      ofTGA = 1,
-      ofSTL = 2
-    };
+  /// Output format enumerator.
+  enum OutputFormat { ofTGA = 1, ofSTL = 2 };
 
-    /// Execute the job core operation in single threaded mode.
-    void ExecuteJobST(csg::SampleSpace * aSampleSpace, csg::Polygonize * aPolygonize,
-      csg::ImageWriter * aImageWriter);
+  /// Execute the job core operation in single threaded mode.
+  void ExecuteJobST(csg::SampleSpace* aSampleSpace,
+                    csg::Polygonize* aPolygonize,
+                    csg::ImageWriter* aImageWriter);
 
-    /// Execute the job core operation in multi threaded mode.
-    void ExecuteJobMT(csg::SampleSpace * aSampleSpace, csg::Polygonize * aPolygonize,
-      csg::ImageWriter * aImageWriter);
+  /// Execute the job core operation in multi threaded mode.
+  void ExecuteJobMT(csg::SampleSpace* aSampleSpace,
+                    csg::Polygonize* aPolygonize,
+                    csg::ImageWriter* aImageWriter);
 
-    /// Load the settings description from an XML document node.
-    void LoadSettings(TiXmlNode * aNode);
+  /// Load the settings description from an XML document node.
+  void LoadSettings(TiXmlNode* aNode);
 
-    /// Load the volume description from an XML document node.
-    void LoadVolume(TiXmlNode * aNode);
+  /// Load the volume description from an XML document node.
+  void LoadVolume(TiXmlNode* aNode);
 
-    /// Recursively load a node in the volume description from an XML document
-    /// element.
-    csg::CSGNode * LoadCSGNode(TiXmlElement * aElement);
+  /// Recursively load a node in the volume description from an XML document
+  /// element.
+  csg::CSGNode* LoadCSGNode(TiXmlElement* aElement);
 
-    /// CSG tree root node.
-    csg::CSGNode * mCSGRoot;
+  /// CSG tree root node.
+  csg::CSGNode* mCSGRoot;
 
-    /// Resolution.
-    csg::Vector3 mResolution;
+  /// Resolution.
+  csg::Vector3 mResolution;
 
-    /// Output file name.
-    std::string mOutputFileName;
+  /// Output file name.
+  std::string mOutputFileName;
 
-    /// Output type.
-    OutputType mOutputType;
+  /// Output type.
+  OutputType mOutputType;
 
-    /// Output format.
-    OutputFormat mOutputFormat;
+  /// Output format.
+  OutputFormat mOutputFormat;
 
-    /// Timer object (for profiling etc).
-    os::Timer mTimer;
+  /// Timer object (for profiling etc).
+  os::Timer mTimer;
 };
 
-#endif // _CSGJOB_H_
+#endif  // _CSGJOB_H_

@@ -24,11 +24,11 @@ namespace csg {
 
 /// STL file format mesh reader.
 class STLMeshReader : public MeshReader {
-  public:
-    /// Load the mesh from a file.
-    virtual void LoadFromFile(const char * aFileName);
+public:
+  /// Load the mesh from a file.
+  virtual void LoadFromFile(const char* aFileName);
 };
 
-}
+}  // namespace csg
 
-#endif // _STLMESHREADER_H_
+#endif  // _STLMESHREADER_H_

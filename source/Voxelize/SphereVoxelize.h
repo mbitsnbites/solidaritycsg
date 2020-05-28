@@ -24,28 +24,34 @@ namespace csg {
 
 /// Voxelize class for sphere objects.
 class SphereVoxelize : public Voxelize {
-  public:
-    /// Constructor.
-    SphereVoxelize() {}
+public:
+  /// Constructor.
+  SphereVoxelize() {
+  }
 
-    /// Destructor.
-    virtual ~SphereVoxelize() {}
+  /// Destructor.
+  virtual ~SphereVoxelize() {
+  }
 
-    /// Define the sphere to be voxelized.
-    void SetSphere(Vector3 aCenter, double aRadius);
+  /// Define the sphere to be voxelized.
+  void SetSphere(Vector3 aCenter, double aRadius);
 
-    /// Calculate a single slice of the voxel volume. The slice must be
-    /// allocated by the caller, and hold DivX * DivY voxels. The function
-    /// returns false if all elements were cosidered "outside" (i.e. the slice
-    /// is empty).
-    virtual bool CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
-      int &aMaxX, int &aMaxY);
+  /// Calculate a single slice of the voxel volume. The slice must be
+  /// allocated by the caller, and hold DivX * DivY voxels. The function
+  /// returns false if all elements were cosidered "outside" (i.e. the slice
+  /// is empty).
+  virtual bool CalculateSlice(Voxel* aSlice,
+                              int aZ,
+                              int& aMinX,
+                              int& aMinY,
+                              int& aMaxX,
+                              int& aMaxY);
 
-  private:
-    Vector3 mCenter; ///< Sphere center.
-    double mRadius;  ///< Sphere radius.
+private:
+  Vector3 mCenter;  ///< Sphere center.
+  double mRadius;   ///< Sphere radius.
 };
 
-}
+}  // namespace csg
 
-#endif // _SPHEREVOXELIZE_H_
+#endif  // _SPHEREVOXELIZE_H_

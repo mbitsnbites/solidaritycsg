@@ -24,11 +24,11 @@ namespace csg {
 
 /// STL file format mesh writer.
 class STLMeshWriter : public MeshWriter {
-  public:
-    /// Save the mesh to a file.
-    virtual void SaveToFile(const char * aFileName);
+public:
+  /// Save the mesh to a file.
+  virtual void SaveToFile(const char* aFileName);
 };
 
-}
+}  // namespace csg
 
-#endif // _STLMESHWRITER_H_
+#endif  // _STLMESHWRITER_H_

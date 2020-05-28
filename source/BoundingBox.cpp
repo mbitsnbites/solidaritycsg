@@ -19,40 +19,38 @@
 
 namespace csg {
 
-void BoundingBox::Union(BoundingBox &aBoundingBox)
-{
-  if(aBoundingBox.mMin.x < mMin.x)
+void BoundingBox::Union(BoundingBox& aBoundingBox) {
+  if (aBoundingBox.mMin.x < mMin.x)
     mMin.x = aBoundingBox.mMin.x;
-  if(aBoundingBox.mMax.x > mMax.x)
+  if (aBoundingBox.mMax.x > mMax.x)
     mMax.x = aBoundingBox.mMax.x;
-  if(aBoundingBox.mMin.y < mMin.y)
+  if (aBoundingBox.mMin.y < mMin.y)
     mMin.y = aBoundingBox.mMin.y;
-  if(aBoundingBox.mMax.y > mMax.y)
+  if (aBoundingBox.mMax.y > mMax.y)
     mMax.y = aBoundingBox.mMax.y;
-  if(aBoundingBox.mMin.z < mMin.z)
+  if (aBoundingBox.mMin.z < mMin.z)
     mMin.z = aBoundingBox.mMin.z;
-  if(aBoundingBox.mMax.z > mMax.z)
+  if (aBoundingBox.mMax.z > mMax.z)
     mMax.z = aBoundingBox.mMax.z;
 }
 
-void BoundingBox::Intersection(BoundingBox &aBoundingBox)
-{
-  if(aBoundingBox.mMin.x > mMin.x)
+void BoundingBox::Intersection(BoundingBox& aBoundingBox) {
+  if (aBoundingBox.mMin.x > mMin.x)
     mMin.x = aBoundingBox.mMin.x;
-  if(aBoundingBox.mMax.x < mMax.x)
+  if (aBoundingBox.mMax.x < mMax.x)
     mMax.x = aBoundingBox.mMax.x;
-  if(aBoundingBox.mMin.y > mMin.y)
+  if (aBoundingBox.mMin.y > mMin.y)
     mMin.y = aBoundingBox.mMin.y;
-  if(aBoundingBox.mMax.y < mMax.y)
+  if (aBoundingBox.mMax.y < mMax.y)
     mMax.y = aBoundingBox.mMax.y;
-  if(aBoundingBox.mMin.z > mMin.z)
+  if (aBoundingBox.mMin.z > mMin.z)
     mMin.z = aBoundingBox.mMin.z;
-  if(aBoundingBox.mMax.z < mMax.z)
+  if (aBoundingBox.mMax.z < mMax.z)
     mMax.z = aBoundingBox.mMax.z;
 
   // Did we get an empty bounding box (no overlap between boxes)?
-  if((mMin.x >= mMax.x) || (mMin.y >= mMax.y) || (mMin.z > mMax.z))
+  if ((mMin.x >= mMax.x) || (mMin.y >= mMax.y) || (mMin.z > mMax.z))
     mMin = mMax = (mMin + mMax) * 0.5;
 }
 
-}
+}  // namespace csg
