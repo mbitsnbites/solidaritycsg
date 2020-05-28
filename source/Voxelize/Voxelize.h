@@ -26,40 +26,42 @@ namespace csg {
 
 /// Voxelize class.
 class Voxelize {
-  public:
-    /// Constructor.
-    Voxelize()
-    {
-      mSampleSpace = 0;
-    }
+public:
+  /// Constructor.
+  Voxelize() {
+    mSampleSpace = 0;
+  }
 
-    /// Destructor.
-    virtual ~Voxelize() {}
+  /// Destructor.
+  virtual ~Voxelize() {
+  }
 
-    /// Return the minimum enclosing axis aligned bounding box for this shape.
-    inline void GetBoundingBox(BoundingBox &aAABB)
-    {
-      aAABB = mAABB;
-    }
+  /// Return the minimum enclosing axis aligned bounding box for this shape.
+  inline void GetBoundingBox(BoundingBox& aAABB) {
+    aAABB = mAABB;
+  }
 
-    /// Define the voxel sample space boundaries and resolution.
-    inline void SetSampleSpace(SampleSpace * aSampleSpace)
-    {
-      mSampleSpace = aSampleSpace;
-    }
+  /// Define the voxel sample space boundaries and resolution.
+  inline void SetSampleSpace(SampleSpace* aSampleSpace) {
+    mSampleSpace = aSampleSpace;
+  }
 
-    /// Calculate a single slice of the voxel volume. The slice must be
-    /// allocated by the caller, and hold DivX * DivY voxels. The function
-    /// returns false if all elements were cosidered "outside" (i.e. the slice
-    /// is empty).
-    virtual bool CalculateSlice(Voxel * aSlice, int aZ, int &aMinX, int &aMinY,
-      int &aMaxX, int &aMaxY) = 0;
+  /// Calculate a single slice of the voxel volume. The slice must be
+  /// allocated by the caller, and hold DivX * DivY voxels. The function
+  /// returns false if all elements were cosidered "outside" (i.e. the slice
+  /// is empty).
+  virtual bool CalculateSlice(Voxel* aSlice,
+                              int aZ,
+                              int& aMinX,
+                              int& aMinY,
+                              int& aMaxX,
+                              int& aMaxY) = 0;
 
-  protected:
-    SampleSpace * mSampleSpace; ///< Voxel sample space definition.
-    BoundingBox mAABB;          ///< Shape bouinding box.
+protected:
+  SampleSpace* mSampleSpace;  ///< Voxel sample space definition.
+  BoundingBox mAABB;          ///< Shape bouinding box.
 };
 
-}
+}  // namespace csg
 
-#endif // _VOXELIZE_H_
+#endif  // _VOXELIZE_H_

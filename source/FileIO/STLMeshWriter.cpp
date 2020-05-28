@@ -27,22 +27,20 @@ using namespace std;
 namespace csg {
 
 /// Write a 32-bit unsigned integer, endian independent.
-static void WriteUInt32(ostream &aStream, uint32_t aValue)
-{
+static void WriteUInt32(ostream& aStream, uint32_t aValue) {
   unsigned char buf[4];
   buf[0] = aValue;
   buf[1] = aValue >> 8;
   buf[2] = aValue >> 16;
   buf[3] = aValue >> 24;
-  aStream.write((char *) buf, 4);
+  aStream.write((char*)buf, 4);
 }
 
 /// Put a single precision float in a buffer, endian independent.
-static void PutFloat(unsigned char * aBuffer, float aValue)
-{
+static void PutFloat(unsigned char* aBuffer, float aValue) {
   union {
     uint32_t i;
-    float  f;
+    float f;
   } val;
 
   val.f = aValue;
@@ -52,7 +50,6 @@ static void PutFloat(unsigned char * aBuffer, float aValue)
   aBuffer[3] = val.i >> 24;
 }
 
-
 //-----------------------------------------------------------------------------
 // STLMeshWriter
 //-----------------------------------------------------------------------------
@@ -60,15 +57,14 @@ static void PutFloat(unsigned char * aBuffer, float aValue)
 // Number of triangles to buffer between file writes
 #define TRI_BUF_SIZE 5000
 
-void STLMeshWriter::SaveToFile(const char * aFileName)
-{
+void STLMeshWriter::SaveToFile(const char* aFileName) {
   // Sanity check
-  if(!mMesh)
+  if (!mMesh)
     throw runtime_error("Badly defined mesh.");
 
   // Open output file
   ofstream f(aFileName, ios_base::out | ios_base::binary);
-  if(f.fail())
+  if (f.fail())
     throw runtime_error("Unable to write output file.");
 
   // Write header (80 character comment + triangle count)
@@ -80,15 +76,14 @@ void STLMeshWriter::SaveToFile(const char * aFileName)
 
   // Allocate memory for an output triangle buffer
   Array<unsigned char> buf(TRI_BUF_SIZE * 50);
-  unsigned char * ptr = &buf[0];
+  unsigned char* ptr = &buf[0];
   int bufCount = 0;
 
   // Write all the triangle data
   int idx = 0;
-  for(uint32_t i = 0; i < triangleCount; ++ i)
-  {
+  for (uint32_t i = 0; i < triangleCount; ++i) {
     // Get the three triangle vertices
-    Vector3 * v[3];
+    Vector3* v[3];
     v[0] = &mMesh->mVertices[mMesh->mIndices[idx]];
     v[1] = &mMesh->mVertices[mMesh->mIndices[idx + 1]];
     v[2] = &mMesh->mVertices[mMesh->mIndices[idx + 2]];
@@ -104,8 +99,7 @@ void STLMeshWriter::SaveToFile(const char * aFileName)
     ptr += 12;
 
     // Put the three triangle vertices
-    for(int j = 0; j < 3; ++ j)
-    {
+    for (int j = 0; j < 3; ++j) {
       PutFloat(&ptr[0], float(v[j]->x));
       PutFloat(&ptr[4], float(v[j]->y));
       PutFloat(&ptr[8], float(v[j]->z));
@@ -117,21 +111,20 @@ void STLMeshWriter::SaveToFile(const char * aFileName)
     ptr += 2;
 
     // When the buffer is full, write it to the output stream
-    ++ bufCount;
-    if(bufCount == TRI_BUF_SIZE)
-    {
-      f.write((char *) &buf[0], bufCount * 50);
+    ++bufCount;
+    if (bufCount == TRI_BUF_SIZE) {
+      f.write((char*)&buf[0], bufCount * 50);
       ptr = &buf[0];
       bufCount = 0;
     }
   }
 
   // Are there any unwritten triangles in the buffer?
-  if(bufCount > 0)
-    f.write((char *) &buf[0], bufCount * 50);
+  if (bufCount > 0)
+    f.write((char*)&buf[0], bufCount * 50);
 
   // Close output file
   f.close();
 }
 
-}
+}  // namespace csg

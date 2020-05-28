@@ -24,26 +24,24 @@ namespace csg {
 
 /// Mesh writer base class.
 class MeshWriter {
-  public:
-    /// Constructor.
-    MeshWriter()
-    {
-      mMesh = 0;
-    }
+public:
+  /// Constructor.
+  MeshWriter() {
+    mMesh = 0;
+  }
 
-    /// Define the mesh data.
-    inline void SetMesh(Mesh * aMesh)
-    {
-      mMesh = aMesh;
-    }
+  /// Define the mesh data.
+  inline void SetMesh(Mesh* aMesh) {
+    mMesh = aMesh;
+  }
 
-    /// Save the mesh to a file.
-    virtual void SaveToFile(const char * aFileName) = 0;
+  /// Save the mesh to a file.
+  virtual void SaveToFile(const char* aFileName) = 0;
 
-  protected:
-    Mesh * mMesh;               ///< Mesh data.
+protected:
+  Mesh* mMesh;  ///< Mesh data.
 };
 
-}
+}  // namespace csg
 
-#endif // _MESHWRITER_H_
+#endif  // _MESHWRITER_H_

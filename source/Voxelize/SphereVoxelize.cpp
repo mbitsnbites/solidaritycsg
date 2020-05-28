@@ -26,8 +26,7 @@ namespace csg {
 // SphereVoxelize
 //-----------------------------------------------------------------------------
 
-void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius)
-{
+void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius) {
   // Collect sphere parameters
   mCenter = aCenter;
   mRadius = aRadius;
@@ -38,17 +37,20 @@ void SphereVoxelize::SetSphere(Vector3 aCenter, double aRadius)
   mAABB.mMax = mCenter + r;
 }
 
-bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
-  int &aMinY, int &aMaxX, int &aMaxY)
-{
+bool SphereVoxelize::CalculateSlice(Voxel* aSlice,
+                                    int aZ,
+                                    int& aMinX,
+                                    int& aMinY,
+                                    int& aMaxX,
+                                    int& aMaxY) {
   // Check that the voxel space has been properly set up
-  if(!mSampleSpace || !mSampleSpace->IsValid())
+  if (!mSampleSpace || !mSampleSpace->IsValid())
     throw runtime_error("Undefined/invalid voxel space dimensions.");
 
   // Calculate voxel size (diagonal of a voxel box)
   Vector3 d = mSampleSpace->VoxelSize();
   double voxelSizeInv = d.Abs();
-  if(voxelSizeInv < 1e-50)
+  if (voxelSizeInv < 1e-50)
     throw runtime_error("Invalid voxel space dimensions.");
   voxelSizeInv = 1.0 / d.Abs();
 
@@ -58,14 +60,12 @@ bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
   aMaxY = mSampleSpace->mDiv[1] - 1;
 
   // Generate slice
-  Voxel * vPtr = aSlice;
+  Voxel* vPtr = aSlice;
   Vector3 p;
   p.z = mSampleSpace->mAABB.mMin.z + d.z * aZ;
-  for(int i = 0; i < mSampleSpace->mDiv[1]; ++ i)
-  {
+  for (int i = 0; i < mSampleSpace->mDiv[1]; ++i) {
     p.y = mSampleSpace->mAABB.mMin.y + d.y * i;
-    for(int j = 0; j < mSampleSpace->mDiv[0]; ++ j)
-    {
+    for (int j = 0; j < mSampleSpace->mDiv[0]; ++j) {
       p.x = mSampleSpace->mAABB.mMin.x + d.x * j;
 
       // Calculate distance from point to the shape surface
@@ -73,17 +73,17 @@ bool SphereVoxelize::CalculateSlice(Voxel * aSlice, int aZ, int &aMinX,
 
       // Convert distance to a voxel value
       Voxel v;
-      if(dist <= -1.0)
+      if (dist <= -1.0)
         v = -VOXEL_MAX;
-      else if(dist >= 1.0)
+      else if (dist >= 1.0)
         v = VOXEL_MAX;
       else
         v = (Voxel)(dist * VOXEL_MAX + 0.5);
-      *vPtr ++ = v;
+      *vPtr++ = v;
     }
   }
 
   return true;
 }
 
-}
+}  // namespace csg

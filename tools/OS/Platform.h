@@ -20,14 +20,14 @@
 
 // Platform specific defines
 #if !defined(WIN32) && defined(_WIN32)
-  #define WIN32
+#define WIN32
 #endif
 
 // Plarform specific includes
 #ifdef WIN32
-  #include <windows.h>
+#include <windows.h>
 #else
-  #include <sys/time.h>
+#include <sys/time.h>
 #endif
 
-#endif // _PLATFORM_H_
+#endif  // _PLATFORM_H_

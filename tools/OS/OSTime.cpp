@@ -18,9 +18,9 @@
 #include "OSTime.h"
 
 #ifdef WIN32
-  #include <windows.h>
+#include <windows.h>
 #else
-  #include <sys/time.h>
+#include <sys/time.h>
 #endif
 
 using namespace std;
@@ -28,47 +28,43 @@ using namespace std;
 namespace os {
 
 /// Constructor
-Timer::Timer()
-{
+Timer::Timer() {
 #ifdef WIN32
-  if(QueryPerformanceFrequency((LARGE_INTEGER *)&mTimeFreq))
-    QueryPerformanceCounter((LARGE_INTEGER *)&mTimeStart);
+  if (QueryPerformanceFrequency((LARGE_INTEGER*)&mTimeFreq))
+    QueryPerformanceCounter((LARGE_INTEGER*)&mTimeStart);
   else
     mTimeFreq = 0;
 #else
   struct timeval tv;
   gettimeofday(&tv, 0);
-  mTimeStart = (long long) tv.tv_sec * (long long) 1000000 + (long long) tv.tv_usec;
+  mTimeStart = (long long)tv.tv_sec * (long long)1000000 + (long long)tv.tv_usec;
 #endif
 }
 
 /// Get current time.
-double Timer::Get()
-{
+double Timer::Get() {
 #ifdef WIN32
   __int64 t;
-  QueryPerformanceCounter((LARGE_INTEGER *)&t);
+  QueryPerformanceCounter((LARGE_INTEGER*)&t);
   return double(t - mTimeStart) / double(mTimeFreq);
 #else
   struct timeval tv;
   gettimeofday(&tv, 0);
-  long long t = (long long) tv.tv_sec * (long long) 1000000 + (long long) tv.tv_usec;
+  long long t = (long long)tv.tv_sec * (long long)1000000 + (long long)tv.tv_usec;
   return (1e-6) * double(t - mTimeStart);
 #endif
 }
 
 /// Push current time (start measuring).
-void Timer::Push()
-{
+void Timer::Push() {
   mStack.push_back(Get());
 }
 
 /// Pop delta time since last push.
-double Timer::PopDelta()
-{
+double Timer::PopDelta() {
   double delta = Get() - mStack.back();
   mStack.pop_back();
   return delta;
 }
 
-}
+}  // namespace os

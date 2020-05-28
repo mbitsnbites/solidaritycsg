@@ -24,84 +24,77 @@ namespace csg {
 
 /// 3D vector class (double precision).
 class Vector3 {
-  public:
-    Vector3()
-    {
-      x = y = z = 0.0;
-    }
+public:
+  Vector3() {
+    x = y = z = 0.0;
+  }
 
-    Vector3(double a, double b, double c)
-    {
-      x = a; y = b; z = c;
-    }
+  Vector3(double a, double b, double c) {
+    x = a;
+    y = b;
+    z = c;
+  }
 
-    Vector3(float a, float b, float c)
-    {
-      x = a; y = b; z = c;
-    }
+  Vector3(float a, float b, float c) {
+    x = a;
+    y = b;
+    z = c;
+  }
 
-    Vector3(const Vector3 &a)
-    {
-      x = a.x; y = a.y; z = a.z;
-    }
+  Vector3(const Vector3& a) {
+    x = a.x;
+    y = a.y;
+    z = a.z;
+  }
 
-    inline double& operator[](unsigned int aIdx) const
-    {
-      return ((double *) &x)[aIdx];
-    }
+  inline double& operator[](unsigned int aIdx) const {
+    return ((double*)&x)[aIdx];
+  }
 
-    inline Vector3 operator+(const Vector3 &v) const
-    {
-      return Vector3(x + v.x,  y + v.y,  z + v.z);
-    }
+  inline Vector3 operator+(const Vector3& v) const {
+    return Vector3(x + v.x, y + v.y, z + v.z);
+  }
 
-    inline Vector3 operator-(const Vector3 &v) const
-    {
-      return Vector3(x - v.x,  y - v.y,  z - v.z);
-    }
+  inline Vector3 operator-(const Vector3& v) const {
+    return Vector3(x - v.x, y - v.y, z - v.z);
+  }
 
-    inline Vector3 operator*(const double &aScale) const
-    {
-      return Vector3(aScale * x, aScale * y, aScale * z);
-    }
+  inline Vector3 operator*(const double& aScale) const {
+    return Vector3(aScale * x, aScale * y, aScale * z);
+  }
 
-    inline void operator+=(const Vector3 &v)
-    {
-      x += v.x;
-      y += v.y;
-      z += v.z;
-    }
+  inline void operator+=(const Vector3& v) {
+    x += v.x;
+    y += v.y;
+    z += v.z;
+  }
 
-    inline bool operator==(const Vector3 &v) const
-    {
-      return (x == v.x) && (y == v.y) && (z == v.z);
-    }
+  inline bool operator==(const Vector3& v) const {
+    return (x == v.x) && (y == v.y) && (z == v.z);
+  }
 
-    inline bool operator!=(const Vector3 &v) const
-    {
-      return (x != v.x) || (y != v.y) || (z != v.z);
-    }
+  inline bool operator!=(const Vector3& v) const {
+    return (x != v.x) || (y != v.y) || (z != v.z);
+  }
 
-    inline double Abs()
-    {
-      return sqrt(x * x + y * y + z * z);
-    }
+  inline double Abs() {
+    return sqrt(x * x + y * y + z * z);
+  }
 
-    inline Vector3 Normalize()
-    {
-      double s = Abs();
-      if(s < 1e-50)
-        return *this;
-      s = 1.0 / s;
-      return Vector3(x * s, y * s, z * s);
-    }
+  inline Vector3 Normalize() {
+    double s = Abs();
+    if (s < 1e-50)
+      return *this;
+    s = 1.0 / s;
+    return Vector3(x * s, y * s, z * s);
+  }
 
-    double x, y, z;
+  double x, y, z;
 };
 
 /// Compute the cross product of two vectors.
-Vector3 Cross(Vector3 &v1, Vector3 &v2);
+Vector3 Cross(Vector3& v1, Vector3& v2);
 
-}
+}  // namespace csg
 
-#endif // _VECTOR3_H_
+#endif  // _VECTOR3_H_

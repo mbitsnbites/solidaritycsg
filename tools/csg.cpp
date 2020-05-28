@@ -23,43 +23,35 @@
 
 using namespace std;
 
-
 /// Main application entry
-int main(int argc, char ** argv)
-{
+int main(int argc, char** argv) {
   // Collect arguments
   CSGJob::OperationMode mode = CSGJob::omMultiThreaded;
   list<string> jobFiles;
-  for(int i = 1; i < argc; ++ i)
-  {
-    if(string(argv[i]) == string("-st"))
+  for (int i = 1; i < argc; ++i) {
+    if (string(argv[i]) == string("-st"))
       mode = CSGJob::omSingleThreaded;
     else
       jobFiles.push_back(string(argv[i]));
   }
 
   // Check arguments
-  if(jobFiles.size() < 1)
-  {
+  if (jobFiles.size() < 1) {
     cout << "Usage: " << argv[0] << " [options] job-xml [job-xml [...]]" << endl;
     cout << "Options:" << endl;
     cout << " -st  Use single threaded operation (default is multi threaded operation)." << endl;
     return -1;
   }
 
-  try
-  {
+  try {
     // Perform all the jobs
-    for(list<string>::iterator i = jobFiles.begin(); i != jobFiles.end(); ++ i)
-    {
+    for (list<string>::iterator i = jobFiles.begin(); i != jobFiles.end(); ++i) {
       CSGJob job;
       job.LoadFromXML((*i).c_str());
       job.Execute(mode);
       cout << endl;
     }
-  }
-  catch(exception &e)
-  {
+  } catch (exception& e) {
     cout << "Error: " << e.what() << endl;
   }
 

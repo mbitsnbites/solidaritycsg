@@ -24,26 +24,22 @@ namespace csg {
 
 /// Vertex class used when joining the triangle vertices.
 class SortVertex {
-  public:
-    Vector3 mPoint;
-    unsigned int mOldIndex;
+public:
+  Vector3 mPoint;
+  unsigned int mOldIndex;
 
-    bool operator<(const SortVertex &v) const
-    {
-      return (mPoint.z < v.mPoint.z) ||
-             ((mPoint.z == v.mPoint.z) && ((mPoint.y < v.mPoint.y) ||
-              ((mPoint.y == v.mPoint.y) && (mPoint.x < v.mPoint.x))));
-    }
+  bool operator<(const SortVertex& v) const {
+    return (mPoint.z < v.mPoint.z) ||
+           ((mPoint.z == v.mPoint.z) &&
+            ((mPoint.y < v.mPoint.y) || ((mPoint.y == v.mPoint.y) && (mPoint.x < v.mPoint.x))));
+  }
 };
 
-
-void Mesh::JoinVertices()
-{
+void Mesh::JoinVertices() {
   // Sort all vertices - O(n*log(n))
   vector<SortVertex> sortedVertices;
   sortedVertices.resize(mVertices.size());
-  for(unsigned int i = 0; i < mVertices.size(); ++ i)
-  {
+  for (unsigned int i = 0; i < mVertices.size(); ++i) {
     sortedVertices[i].mPoint = mVertices[i];
     sortedVertices[i].mOldIndex = i;
   }
@@ -52,14 +48,12 @@ void Mesh::JoinVertices()
   // Join and re-index vertices - O(n)
   vector<unsigned int> indexMap;
   indexMap.resize(mVertices.size());
-  SortVertex * firstEqual = &sortedVertices[0];
+  SortVertex* firstEqual = &sortedVertices[0];
   int vertIdx = -1;
-  for(unsigned int i = 0; i < sortedVertices.size(); ++ i)
-  {
-    if((i == 0) || (sortedVertices[i].mPoint != firstEqual->mPoint))
-    {
+  for (unsigned int i = 0; i < sortedVertices.size(); ++i) {
+    if ((i == 0) || (sortedVertices[i].mPoint != firstEqual->mPoint)) {
       firstEqual = &sortedVertices[i];
-      ++ vertIdx;
+      ++vertIdx;
       mVertices[vertIdx] = firstEqual->mPoint;
     }
     indexMap[sortedVertices[i].mOldIndex] = vertIdx;
@@ -67,8 +61,8 @@ void Mesh::JoinVertices()
   mVertices.resize(vertIdx + 1);
 
   // Re-index indices - O(n)
-  for(unsigned int i = 0; i < mIndices.size(); ++ i)
+  for (unsigned int i = 0; i < mIndices.size(); ++i)
     mIndices[i] = indexMap[mIndices[i]];
 }
 
-}
+}  // namespace csg

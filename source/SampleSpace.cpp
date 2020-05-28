@@ -27,11 +27,9 @@ namespace csg {
 // SampleSpace
 //-----------------------------------------------------------------------------
 
-void SampleSpace::DefineSpace(BoundingBox &aAABB, Vector3 aResolution)
-{
+void SampleSpace::DefineSpace(BoundingBox& aAABB, Vector3 aResolution) {
   // Sanity check
-  if((aResolution.x < 1e-50) ||(aResolution.y < 1e-50) ||
-     (aResolution.z < 1e-50))
+  if ((aResolution.x < 1e-50) || (aResolution.y < 1e-50) || (aResolution.z < 1e-50))
     throw runtime_error("Invalid resolution.");
 
   // Determine nominal division
@@ -39,33 +37,30 @@ void SampleSpace::DefineSpace(BoundingBox &aAABB, Vector3 aResolution)
   mDiv[0] = int(ceil(d.x / aResolution.x));
   mDiv[1] = int(ceil(d.y / aResolution.y));
   mDiv[2] = int(ceil(d.z / aResolution.z));
-  for(int i = 0; i < 3; ++ i)
-    if(mDiv[i] < 1)
+  for (int i = 0; i < 3; ++i)
+    if (mDiv[i] < 1)
       mDiv[i] = 1;
 
   // Compensate AABB size for boundary gradients etc.
-  for(int i = 0; i < 3; ++ i)
+  for (int i = 0; i < 3; ++i)
     mDiv[i] += 4;
 
   // Calculate resulting bounding box
   Vector3 center = (aAABB.mMin + aAABB.mMax) * 0.5;
-  Vector3 radius = Vector3(mDiv[0] * aResolution.x,
-                           mDiv[1] * aResolution.y,
-                           mDiv[2] * aResolution.z) * 0.5;
+  Vector3 radius =
+      Vector3(mDiv[0] * aResolution.x, mDiv[1] * aResolution.y, mDiv[2] * aResolution.z) * 0.5;
   mAABB.mMin = center - radius;
   mAABB.mMax = center + radius;
 }
 
-void SampleSpace::DefineSpace(BoundingBox &aAABB, double aResolution)
-{
+void SampleSpace::DefineSpace(BoundingBox& aAABB, double aResolution) {
   DefineSpace(aAABB, Vector3(aResolution, aResolution, aResolution));
 }
 
-void FillSlice(Voxel * aSlice, Voxel aValue, int aCount)
-{
-  Voxel * ptr = aSlice;
-  for(int i = 0; i < aCount; ++ i)
-    *ptr ++ = aValue;
+void FillSlice(Voxel* aSlice, Voxel aValue, int aCount) {
+  Voxel* ptr = aSlice;
+  for (int i = 0; i < aCount; ++i)
+    *ptr++ = aValue;
 }
 
-}
+}  // namespace csg

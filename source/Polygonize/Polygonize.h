@@ -26,39 +26,36 @@ namespace csg {
 
 /// Polygonize class.
 class Polygonize {
-  public:
-    /// Constructor.
-    Polygonize()
-    {
-      mSampleSpace = 0;
-    }
+public:
+  /// Constructor.
+  Polygonize() {
+    mSampleSpace = 0;
+  }
 
-    /// Define the voxel sample space boundaries and resolution.
-    inline void SetSampleSpace(SampleSpace * aSampleSpace)
-    {
-      mSampleSpace = aSampleSpace;
-    }
+  /// Define the voxel sample space boundaries and resolution.
+  inline void SetSampleSpace(SampleSpace* aSampleSpace) {
+    mSampleSpace = aSampleSpace;
+  }
 
-    /// Calculate the polygons for a pair of slices of the voxel volume.
-    void AppendSlicePair(Voxel * aSlice1, Voxel * aSlice2, int aZ1);
+  /// Calculate the polygons for a pair of slices of the voxel volume.
+  void AppendSlicePair(Voxel* aSlice1, Voxel* aSlice2, int aZ1);
 
-    /// Export the state of the polygonizer to a mesh object.
-    void ToMesh(Mesh &aMesh);
+  /// Export the state of the polygonizer to a mesh object.
+  void ToMesh(Mesh& aMesh);
 
-    /// Return the total triangle count.
-    inline int Count()
-    {
-      return mTriBuf.Count();
-    }
+  /// Return the total triangle count.
+  inline int Count() {
+    return mTriBuf.Count();
+  }
 
-  private:
-    /// Voxel sample space definition.
-    SampleSpace * mSampleSpace;
+private:
+  /// Voxel sample space definition.
+  SampleSpace* mSampleSpace;
 
-    /// Triangle buffer.
-    TriBuf mTriBuf;
+  /// Triangle buffer.
+  TriBuf mTriBuf;
 };
 
-}
+}  // namespace csg
 
-#endif // _POLYGONIZE_H_
+#endif  // _POLYGONIZE_H_

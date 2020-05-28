@@ -24,23 +24,22 @@ namespace csg {
 
 /// Axis aligned bounding box class.
 class BoundingBox {
-  public:
-    /// Get the diagonal of the bounding box.
-    inline Vector3 Diagonal()
-    {
-      return mMax - mMin;
-    }
+public:
+  /// Get the diagonal of the bounding box.
+  inline Vector3 Diagonal() {
+    return mMax - mMin;
+  }
 
-    /// Calculate the union with another bounding box.
-    void Union(BoundingBox &aBoundingBox);
+  /// Calculate the union with another bounding box.
+  void Union(BoundingBox& aBoundingBox);
 
-    /// Calculate the intersection with another bounding box.
-    void Intersection(BoundingBox &aBoundingBox);
+  /// Calculate the intersection with another bounding box.
+  void Intersection(BoundingBox& aBoundingBox);
 
-    Vector3 mMin; ///< Lower bound of the bounding box.
-    Vector3 mMax; ///< Upper bound of the bounding box.
+  Vector3 mMin;  ///< Lower bound of the bounding box.
+  Vector3 mMax;  ///< Upper bound of the bounding box.
 };
 
-}
+}  // namespace csg
 
-#endif // _BOUNDINGBOX_H_
+#endif  // _BOUNDINGBOX_H_

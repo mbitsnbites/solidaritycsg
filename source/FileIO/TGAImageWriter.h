@@ -24,11 +24,11 @@ namespace csg {
 
 /// TGA format image writer class.
 class TGAImageWriter : public ImageWriter {
-  public:
-    /// Save the image to a file.
-    virtual void SaveToFile(const char * aFileName, void * aData, int aSliceNo = 0);
+public:
+  /// Save the image to a file.
+  virtual void SaveToFile(const char* aFileName, void* aData, int aSliceNo = 0);
 };
 
-}
+}  // namespace csg
 
-#endif // _TGAIMAGEWRITER_H_
+#endif  // _TGAIMAGEWRITER_H_

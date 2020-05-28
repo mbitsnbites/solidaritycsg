@@ -24,26 +24,24 @@ namespace csg {
 
 /// Mesh reader base class.
 class MeshReader {
-  public:
-    /// Constructor.
-    MeshReader()
-    {
-      mMesh = 0;
-    }
+public:
+  /// Constructor.
+  MeshReader() {
+    mMesh = 0;
+  }
 
-    /// Define the mesh data.
-    inline void SetMesh(Mesh * aMesh)
-    {
-      mMesh = aMesh;
-    }
+  /// Define the mesh data.
+  inline void SetMesh(Mesh* aMesh) {
+    mMesh = aMesh;
+  }
 
-    /// Load the mesh from a file.
-    virtual void LoadFromFile(const char * aFileName) = 0;
+  /// Load the mesh from a file.
+  virtual void LoadFromFile(const char* aFileName) = 0;
 
-  protected:
-    Mesh * mMesh;               ///< Mesh data.
+protected:
+  Mesh* mMesh;  ///< Mesh data.
 };
 
-}
+}  // namespace csg
 
-#endif // _MESHREADER_H_
+#endif  // _MESHREADER_H_
