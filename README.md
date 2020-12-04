@@ -29,38 +29,46 @@ The `csg` tool takes one or more scene description XML files as input:
 $ tools/csg myscene.xml
 ```
 
-Here is an example XML file:
+### Example scene XML file
 
 ```xml
 <?xml version="1.0" encoding='UTF-8'?>
 <csg>
   <settings>
-    <resolution x="0.001" y="0.001" z="0.001" />
+    <resolution x="0.01" y="0.01" z="0.01" />
     <output name="example" type="mesh" format="stl" />
   </settings>
   <volume>
     <difference>
-      <box cx="0.0" cy="0.0" cz="0.0" sx="0.1" sy="0.1" sz="0.1" />
+      <box cx="0.0" cy="0.0" cz="0.0" sx="1.0" sy="1.0" sz="1.0" />
       <mesh src="3d-models/bunny.stl" />
     </difference>
   </volume>
 </csg>
 ```
 
-Example outputs:
+### About the resolution
+
+Be careful when selecting the resolution. Since the entire scene is sampled and reproduced at the given resoltuion, a too fine resolution will lead to high memory usage and very large output files. On the other hand, a to coarse resolution will lead to a poor result.
+
+### Example outputs
 
 * 3D model in STL format:
   * `<output name="example" type="mesh" format="stl" />`
 * 2D slices (many TGA files):
   * `<output name="example" type="slice" format="tga" />`
 
-Valid CSG operations:
+### Valid CSG operations
+
+There are three supported CSG operations:
 
 * `<union>`
 * `<difference>`
 * `<intersection>`
 
-Valid shapes (examples):
+### Valid shapes
+
+There are three supported shape types: two mathematical shapes (`sphere` and `box`) and one triangle mesh shape (`mesh`):
 
 * `<sphere cx="0.0" cy="0.0" cz="0.0" r="0.6" />`
 * `<box cx="0.0" cy="0.0" cz="0.0" sx="1.0" sy="1.0" sz="1.0" />`
