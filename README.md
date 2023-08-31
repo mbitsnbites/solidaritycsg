@@ -1,3 +1,5 @@
+## ⚠️ This repository has moved to: https://gitlab.com/mbitsnbites/solidaritycsg
+
 # ![Logo](media/SolidarityCSG-logo.png) SolidarityCSG
 
 SolidarityCSG is a library for quick and robust constructive solid geometry (CSG) operations.
